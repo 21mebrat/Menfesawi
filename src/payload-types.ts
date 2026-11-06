@@ -69,6 +69,7 @@ export interface Config {
   collections: {
     users: User;
     media: Media;
+    'auth-accounts': AuthAccount;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -78,6 +79,7 @@ export interface Config {
   collectionsSelect: {
     users: UsersSelect<false> | UsersSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
+    'auth-accounts': AuthAccountsSelect<false> | AuthAccountsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -86,10 +88,10 @@ export interface Config {
   db: {
     defaultIDType: string;
   };
-  fallbackLocale: null;
+  fallbackLocale: ('false' | 'none' | 'null') | false | null | ('en' | 'am') | ('en' | 'am')[];
   globals: {};
   globalsSelect: {};
-  locale: null;
+  locale: 'en' | 'am';
   widgets: {
     collections: CollectionsWidget;
   };
@@ -118,11 +120,20 @@ export interface UserAuthOperations {
   };
 }
 /**
+ * Who can log in, write articles, and manage the application?
+ *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "users".
  */
 export interface User {
   id: string;
+  /**
+   * The author's given or display name.
+   */
+  name?: string | null;
+  role?: ('admin' | 'editor' | 'member') | null;
+  avatarURL?: string | null;
+  isActive?: boolean | null;
   updatedAt: string;
   createdAt: string;
   email: string;
@@ -150,6 +161,7 @@ export interface User {
 export interface Media {
   id: string;
   alt: string;
+  _objectKey?: string | null;
   updatedAt: string;
   createdAt: string;
   url?: string | null;
@@ -161,6 +173,19 @@ export interface Media {
   height?: number | null;
   focalX?: number | null;
   focalY?: number | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "auth-accounts".
+ */
+export interface AuthAccount {
+  id: string;
+  user: string | User;
+  provider: 'google';
+  providerAccountId: string;
+  issuer?: string | null;
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -193,6 +218,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'media';
         value: string | Media;
+      } | null)
+    | ({
+        relationTo: 'auth-accounts';
+        value: string | AuthAccount;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -241,6 +270,10 @@ export interface PayloadMigration {
  * via the `definition` "users_select".
  */
 export interface UsersSelect<T extends boolean = true> {
+  name?: T;
+  role?: T;
+  avatarURL?: T;
+  isActive?: T;
   updatedAt?: T;
   createdAt?: T;
   email?: T;
@@ -265,6 +298,7 @@ export interface UsersSelect<T extends boolean = true> {
  */
 export interface MediaSelect<T extends boolean = true> {
   alt?: T;
+  _objectKey?: T;
   updatedAt?: T;
   createdAt?: T;
   url?: T;
@@ -276,6 +310,18 @@ export interface MediaSelect<T extends boolean = true> {
   height?: T;
   focalX?: T;
   focalY?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "auth-accounts_select".
+ */
+export interface AuthAccountsSelect<T extends boolean = true> {
+  user?: T;
+  provider?: T;
+  providerAccountId?: T;
+  issuer?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

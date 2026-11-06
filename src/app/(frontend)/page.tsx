@@ -1,58 +1,83 @@
-import { headers as getHeaders } from 'next/headers.js'
-import Image from 'next/image'
-import { getPayload } from 'payload'
 import React from 'react'
-import { fileURLToPath } from 'url'
-
-import config from '@/payload.config'
-import './styles.css'
+import { headers as getHeaders } from 'next/headers'
+import Link from 'next/link'
+import { getPayload } from 'payload'
+import configPromise from '@/payload.config'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 
 export default async function HomePage() {
   const headers = await getHeaders()
-  const payloadConfig = await config
-  const payload = await getPayload({ config: payloadConfig })
+  const config = await configPromise
+  const payload = await getPayload({ config })
   const { user } = await payload.auth({ headers })
 
-  const fileURL = `vscode://file/${fileURLToPath(import.meta.url)}`
-
   return (
-    <div className="home">
-      <div className="content">
-        <picture>
-          <source srcSet="https://raw.githubusercontent.com/payloadcms/payload/3.x/packages/ui/src/assets/payload-favicon.svg" />
-          <Image
-            alt="Payload Logo"
-            height={65}
-            src="https://raw.githubusercontent.com/payloadcms/payload/3.x/packages/ui/src/assets/payload-favicon.svg"
-            width={65}
-          />
-        </picture>
-        {!user && <h1>Welcome to your new project.</h1>}
-        {user && <h1>Welcome back, {user.email}</h1>}
-        <div className="links">
-          <a
-            className="admin"
-            href={payloadConfig.routes.admin}
-            rel="noopener noreferrer"
-            target="_blank"
-          >
-            Go to admin panel
-          </a>
-          <a
-            className="docs"
-            href="https://payloadcms.com/docs"
-            rel="noopener noreferrer"
-            target="_blank"
-          >
-            Documentation
-          </a>
+    <div className="mx-auto max-w-4xl px-4 py-16">
+      <div className="text-center space-y-4">
+        <h1 className="font-heading text-4xl font-bold tracking-tight text-foreground sm:text-5xl">
+          መንፈሳዊ (Menfesawi)
+        </h1>
+        <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
+          Ethiopian Orthodox Tewahedo sacred reading, scripture, and learning application.
+        </p>
+
+        <div className="flex items-center justify-center gap-3 pt-4">
+          {user ? (
+            <>
+              <Link href="/account">
+                <Button className="bg-primary text-primary-foreground hover:bg-primary-hover">
+                  View Account
+                </Button>
+              </Link>
+              {(user as any).role === 'admin' || (user as any).role === 'editor' ? (
+                <Link href="/admin">
+                  <Button variant="outline">Admin Dashboard</Button>
+                </Link>
+              ) : null}
+            </>
+          ) : (
+            <>
+              <Link href="/login">
+                <Button className="bg-primary text-primary-foreground hover:bg-primary-hover">
+                  Sign In / Register
+                </Button>
+              </Link>
+              <Link href="/api/auth/google">
+                <Button variant="outline">Continue with Google</Button>
+              </Link>
+            </>
+          )}
         </div>
       </div>
-      <div className="footer">
-        <p>Update this page by editing</p>
-        <a className="codeLink" href={fileURL}>
-          <code>app/(frontend)/page.tsx</code>
-        </a>
+
+      <div className="mt-16 grid grid-cols-1 gap-6 sm:grid-cols-3">
+        <Card className="border-border">
+          <CardHeader>
+            <CardTitle className="text-base">Holy Scriptures</CardTitle>
+            <CardDescription>
+              Orthodox Canon Bible books, chapters, and verses.
+            </CardDescription>
+          </CardHeader>
+        </Card>
+
+        <Card className="border-border">
+          <CardHeader>
+            <CardTitle className="text-base">Daily Synaxarium</CardTitle>
+            <CardDescription>
+              Commemorations of holy fathers, martyrs, and saints.
+            </CardDescription>
+          </CardHeader>
+        </Card>
+
+        <Card className="border-border">
+          <CardHeader>
+            <CardTitle className="text-base">Prayers &amp; Praises</CardTitle>
+            <CardDescription>
+              Waddase Maryam, Melka Kidusan, and liturgical hymns.
+            </CardDescription>
+          </CardHeader>
+        </Card>
       </div>
     </div>
   )
