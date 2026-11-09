@@ -21,8 +21,13 @@ export function getAppBaseURL(): string {
 
 /**
  * Returns the exact Google OAuth redirect URI.
+ * Can be overridden via GOOGLE_CALLBACK_URL in .env if an alternate URI
+ * (e.g. http://localhost:3000/user) was configured in Google Cloud Console.
  */
 export function getGoogleCallbackURI(): string {
+  if (process.env.GOOGLE_CALLBACK_URL) {
+    return process.env.GOOGLE_CALLBACK_URL
+  }
   return `${getAppBaseURL()}/api/auth/google/callback`
 }
 

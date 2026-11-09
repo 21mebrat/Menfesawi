@@ -791,67 +791,70 @@ describe('Menfesawi Authentication & Access Control', () => {
     process.env.GOOGLE_CLIENT_ID = 'test-client-id'
     process.env.GOOGLE_CLIENT_SECRET = 'test-client-secret'
 
-    const mockClient = {
-      getToken: vi.fn().mockResolvedValue({
-        tokens: { id_token: 'mock_jwt_token' },
-      }),
-      verifyIdToken: vi.fn(),
+    const getTokenSpy = vi.spyOn(OAuth2Client.prototype, 'getToken').mockResolvedValue({
+      tokens: { id_token: 'mock_jwt_token' },
+      res: null,
+    } as any)
+    const verifySpy = vi.spyOn(OAuth2Client.prototype, 'verifyIdToken')
+
+    try {
+      // Case 1: Nonce mismatch
+      verifySpy.mockResolvedValueOnce({
+        getPayload: () => ({
+          sub: 'sub-1',
+          email: 'user@test.com',
+          email_verified: true,
+          iss: 'https://accounts.google.com',
+          nonce: 'actual_nonce_123',
+        }),
+      } as any)
+      await expect(
+        googleAuth.exchangeAndVerifyGoogleCode({
+          code: 'auth_code',
+          codeVerifier: 'verifier',
+          expectedNonce: 'different_nonce_456',
+        }),
+      ).rejects.toThrow(/nonce is missing or mismatch/)
+
+      // Case 2: Missing nonce in ID token
+      verifySpy.mockResolvedValueOnce({
+        getPayload: () => ({
+          sub: 'sub-1',
+          email: 'user@test.com',
+          email_verified: true,
+          iss: 'https://accounts.google.com',
+          // nonce is omitted
+        }),
+      } as any)
+      await expect(
+        googleAuth.exchangeAndVerifyGoogleCode({
+          code: 'auth_code',
+          codeVerifier: 'verifier',
+          expectedNonce: 'expected_nonce_123',
+        }),
+      ).rejects.toThrow(/nonce is missing or mismatch/)
+
+      // Case 3: Expected nonce parameter is empty/missing
+      verifySpy.mockResolvedValueOnce({
+        getPayload: () => ({
+          sub: 'sub-1',
+          email: 'user@test.com',
+          email_verified: true,
+          iss: 'https://accounts.google.com',
+          nonce: 'actual_nonce_123',
+        }),
+      } as any)
+      await expect(
+        googleAuth.exchangeAndVerifyGoogleCode({
+          code: 'auth_code',
+          codeVerifier: 'verifier',
+          expectedNonce: '',
+        }),
+      ).rejects.toThrow(/nonce is missing or mismatch/)
+    } finally {
+      getTokenSpy.mockRestore()
+      verifySpy.mockRestore()
     }
-    vi.spyOn(googleAuth, 'getGoogleOAuthClient').mockReturnValue(mockClient as any)
-
-    // Case 1: Nonce mismatch
-    mockClient.verifyIdToken.mockResolvedValueOnce({
-      getPayload: () => ({
-        sub: 'sub-1',
-        email: 'user@test.com',
-        email_verified: true,
-        iss: 'https://accounts.google.com',
-        nonce: 'actual_nonce_123',
-      }),
-    })
-    await expect(
-      googleAuth.exchangeAndVerifyGoogleCode({
-        code: 'auth_code',
-        codeVerifier: 'verifier',
-        expectedNonce: 'different_nonce_456',
-      }),
-    ).rejects.toThrow(/nonce is missing or mismatch/)
-
-    // Case 2: Missing nonce in ID token
-    mockClient.verifyIdToken.mockResolvedValueOnce({
-      getPayload: () => ({
-        sub: 'sub-1',
-        email: 'user@test.com',
-        email_verified: true,
-        iss: 'https://accounts.google.com',
-        // nonce is omitted
-      }),
-    })
-    await expect(
-      googleAuth.exchangeAndVerifyGoogleCode({
-        code: 'auth_code',
-        codeVerifier: 'verifier',
-        expectedNonce: 'expected_nonce_123',
-      }),
-    ).rejects.toThrow(/nonce is missing or mismatch/)
-
-    // Case 3: Expected nonce parameter is empty/missing
-    mockClient.verifyIdToken.mockResolvedValueOnce({
-      getPayload: () => ({
-        sub: 'sub-1',
-        email: 'user@test.com',
-        email_verified: true,
-        iss: 'https://accounts.google.com',
-        nonce: 'actual_nonce_123',
-      }),
-    })
-    await expect(
-      googleAuth.exchangeAndVerifyGoogleCode({
-        code: 'auth_code',
-        codeVerifier: 'verifier',
-        expectedNonce: '',
-      }),
-    ).rejects.toThrow(/nonce is missing or mismatch/)
   })
 
   // -------------------------------------------------------------
