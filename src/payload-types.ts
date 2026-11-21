@@ -70,6 +70,11 @@ export interface Config {
     users: User;
     media: Media;
     'auth-accounts': AuthAccount;
+    categories: Category;
+    files: File;
+    books: Book;
+    teachings: Teaching;
+    'social-deliveries': SocialDelivery;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -80,6 +85,11 @@ export interface Config {
     users: UsersSelect<false> | UsersSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     'auth-accounts': AuthAccountsSelect<false> | AuthAccountsSelect<true>;
+    categories: CategoriesSelect<false> | CategoriesSelect<true>;
+    files: FilesSelect<false> | FilesSelect<true>;
+    books: BooksSelect<false> | BooksSelect<true>;
+    teachings: TeachingsSelect<false> | TeachingsSelect<true>;
+    'social-deliveries': SocialDeliveriesSelect<false> | SocialDeliveriesSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -134,6 +144,14 @@ export interface User {
   role?: ('admin' | 'editor' | 'member') | null;
   avatarURL?: string | null;
   isActive?: boolean | null;
+  /**
+   * Whether this account has an active usable password known to the user.
+   */
+  hasPassword?: boolean | null;
+  /**
+   * Your uploaded profile picture. Displayed instead of your Google profile picture when selected.
+   */
+  avatar?: (string | null) | Media;
   updatedAt: string;
   createdAt: string;
   email: string;
@@ -155,12 +173,45 @@ export interface User {
   collection: 'users';
 }
 /**
+ * Profile pictures and images used in Menfesawi content.
+ *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "media".
  */
 export interface Media {
   id: string;
-  alt: string;
+  /**
+   * Cannot be changed after upload. Member uploads are always profile pictures.
+   */
+  purpose: 'avatar' | 'content';
+  /**
+   * Assigned automatically to the uploading account.
+   */
+  owner: string | User;
+  /**
+   * Describe the meaningful visual information. Do not repeat the caption.
+   */
+  alt?: string | null;
+  /**
+   * Use only when the image adds no information to the surrounding content.
+   */
+  isDecorative?: boolean | null;
+  /**
+   * Optional text displayed alongside the image.
+   */
+  caption?: string | null;
+  /**
+   * Identify the person or organization credited for this image.
+   */
+  credit?: string | null;
+  /**
+   * Link to the original source of the image.
+   */
+  sourceURL?: string | null;
+  /**
+   * Record the license, permission, or copyright information.
+   */
+  rights?: string | null;
   _objectKey?: string | null;
   updatedAt: string;
   createdAt: string;
@@ -181,9 +232,232 @@ export interface Media {
 export interface AuthAccount {
   id: string;
   user: string | User;
-  provider: 'google';
+  provider: 'google' | 'apple';
   providerAccountId: string;
   issuer?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Organize books, teachings, hymns, and articles by topic.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "categories".
+ */
+export interface Category {
+  id: string;
+  /**
+   * The category name displayed in the selected content language.
+   */
+  name: string;
+  /**
+   * A unique identifier shared across languages. Avoid changing it after publication.
+   */
+  slug: string;
+  /**
+   * Briefly explain which topics belong in this category.
+   */
+  description?: string | null;
+  /**
+   * Select where this category should be available.
+   */
+  contentTypes: ('books' | 'teachings' | 'hymns' | 'articles')[];
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Private Telegram file records. Members receive files through the bot after signing in.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "files".
+ */
+export interface File {
+  id: string;
+  /**
+   * The filename reported by Telegram. Store the book title separately in the library.
+   */
+  originalFilename: string;
+  /**
+   * The document MIME type, such as application/pdf.
+   */
+  mimeType: string;
+  /**
+   * Use the size reported by Telegram. Leave empty if unknown.
+   */
+  sizeBytes?: number | null;
+  /**
+   * Enable only after successful test delivery and confirmation of distribution permission.
+   */
+  isAvailable: boolean;
+  /**
+   * Private file identifiers. Configure the storage group and bot credentials in environment variables.
+   */
+  telegram: {
+    /**
+     * Use the file ID received by the same bot that delivers the document.
+     */
+    fileId: string;
+    /**
+     * For identifying duplicate files only. Not used for delivery.
+     */
+    fileUniqueId?: string | null;
+  };
+  /**
+   * Record the license or permission allowing this file to be distributed.
+   */
+  rights?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Book details displayed in the library. Downloadable files are managed separately.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "books".
+ */
+export interface Book {
+  id: string;
+  title: string;
+  /**
+   * A stable identifier shared across languages. Avoid changing it after publication.
+   */
+  slug: string;
+  /**
+   * Describe the book and its subject without copying the full text.
+   */
+  description?: string | null;
+  cover?: (string | null) | Media;
+  authors?:
+    | {
+        name: string;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Languages inside the book, independent of the interface language.
+   */
+  language: ('am' | 'gez' | 'en')[];
+  categories?: (string | Category)[] | null;
+  /**
+   * Private file records for this book. Delivery must separately check login and file availability.
+   */
+  files?: (string | File)[] | null;
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
+}
+/**
+ * Religious teachings with optional videos and external resources.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "teachings".
+ */
+export interface Teaching {
+  id: string;
+  title: string;
+  /**
+   * A stable identifier shared across languages. Avoid changing it after publication.
+   */
+  slug: string;
+  /**
+   * The teaching cover, also available for social announcements.
+   */
+  cover?: (string | null) | Media;
+  /**
+   * Write the teaching using headings, paragraphs, lists, and source references.
+   */
+  content: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  };
+  /**
+   * Optional supporting resources. These are not social publishing destinations.
+   */
+  resources?:
+    | {
+        title: string;
+        type: 'video' | 'link';
+        /**
+         * A YouTube video, Telegram post, or another supporting HTTPS link.
+         */
+        url: string;
+        description?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  categories?: (string | Category)[] | null;
+  /**
+   * Credit the original author or teacher, where known.
+   */
+  attribution?: string | null;
+  sources?:
+    | {
+        /**
+         * A book title, scripture reference, or other source citation.
+         */
+        reference: string;
+        url?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Automatically recorded after successful posting. No destination links need to be entered here.
+   */
+  socialPosts?:
+    | {
+        destination: 'telegram-channel' | 'telegram-group' | 'facebook' | 'instagram';
+        language: 'am' | 'en';
+        postId: string;
+        /**
+         * The direct post link, when available. The website can display a platform label for it.
+         */
+        url?: string | null;
+        publishedAt: string;
+        id?: string | null;
+      }[]
+    | null;
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
+}
+/**
+ * System-managed announcement delivery records.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "social-deliveries".
+ */
+export interface SocialDelivery {
+  id: string;
+  /**
+   * A unique key generated by the publishing service to identify this announcement.
+   */
+  deliveryKey: string;
+  teaching: string | Teaching;
+  destination: 'telegram-channel' | 'telegram-group' | 'facebook' | 'instagram';
+  language: 'am' | 'en';
+  /**
+   * An uncertain result needs reconciliation before resending to avoid duplicate posts.
+   */
+  status: 'pending' | 'processing' | 'sent' | 'failed' | 'uncertain';
+  attempts: number;
+  platformPostId?: string | null;
+  postURL?: string | null;
+  sentAt?: string | null;
+  /**
+   * A sanitized error summary. Never store tokens or complete provider responses.
+   */
+  lastError?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -222,6 +496,26 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'auth-accounts';
         value: string | AuthAccount;
+      } | null)
+    | ({
+        relationTo: 'categories';
+        value: string | Category;
+      } | null)
+    | ({
+        relationTo: 'files';
+        value: string | File;
+      } | null)
+    | ({
+        relationTo: 'books';
+        value: string | Book;
+      } | null)
+    | ({
+        relationTo: 'teachings';
+        value: string | Teaching;
+      } | null)
+    | ({
+        relationTo: 'social-deliveries';
+        value: string | SocialDelivery;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -274,6 +568,8 @@ export interface UsersSelect<T extends boolean = true> {
   role?: T;
   avatarURL?: T;
   isActive?: T;
+  hasPassword?: T;
+  avatar?: T;
   updatedAt?: T;
   createdAt?: T;
   email?: T;
@@ -297,7 +593,14 @@ export interface UsersSelect<T extends boolean = true> {
  * via the `definition` "media_select".
  */
 export interface MediaSelect<T extends boolean = true> {
+  purpose?: T;
+  owner?: T;
   alt?: T;
+  isDecorative?: T;
+  caption?: T;
+  credit?: T;
+  sourceURL?: T;
+  rights?: T;
   _objectKey?: T;
   updatedAt?: T;
   createdAt?: T;
@@ -320,6 +623,118 @@ export interface AuthAccountsSelect<T extends boolean = true> {
   provider?: T;
   providerAccountId?: T;
   issuer?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "categories_select".
+ */
+export interface CategoriesSelect<T extends boolean = true> {
+  name?: T;
+  slug?: T;
+  description?: T;
+  contentTypes?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "files_select".
+ */
+export interface FilesSelect<T extends boolean = true> {
+  originalFilename?: T;
+  mimeType?: T;
+  sizeBytes?: T;
+  isAvailable?: T;
+  telegram?:
+    | T
+    | {
+        fileId?: T;
+        fileUniqueId?: T;
+      };
+  rights?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "books_select".
+ */
+export interface BooksSelect<T extends boolean = true> {
+  title?: T;
+  slug?: T;
+  description?: T;
+  cover?: T;
+  authors?:
+    | T
+    | {
+        name?: T;
+        id?: T;
+      };
+  language?: T;
+  categories?: T;
+  files?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "teachings_select".
+ */
+export interface TeachingsSelect<T extends boolean = true> {
+  title?: T;
+  slug?: T;
+  cover?: T;
+  content?: T;
+  resources?:
+    | T
+    | {
+        title?: T;
+        type?: T;
+        url?: T;
+        description?: T;
+        id?: T;
+      };
+  categories?: T;
+  attribution?: T;
+  sources?:
+    | T
+    | {
+        reference?: T;
+        url?: T;
+        id?: T;
+      };
+  socialPosts?:
+    | T
+    | {
+        destination?: T;
+        language?: T;
+        postId?: T;
+        url?: T;
+        publishedAt?: T;
+        id?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+  _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "social-deliveries_select".
+ */
+export interface SocialDeliveriesSelect<T extends boolean = true> {
+  deliveryKey?: T;
+  teaching?: T;
+  destination?: T;
+  language?: T;
+  status?: T;
+  attempts?: T;
+  platformPostId?: T;
+  postURL?: T;
+  sentAt?: T;
+  lastError?: T;
   updatedAt?: T;
   createdAt?: T;
 }

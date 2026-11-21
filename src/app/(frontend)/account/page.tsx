@@ -47,6 +47,11 @@ export default async function AccountPage({ searchParams }: AccountPageProps) {
     showHiddenFields: true,
   })
 
+  // Reject inactive users against current persisted database state
+  if (!fullUser || (fullUser as any).isActive === false) {
+    redirect('/login?error=account_inactive')
+  }
+
   // Fetch linked provider accounts for this user
   const authAccountsResult = await payload.find({
     collection: 'auth-accounts',
@@ -79,7 +84,7 @@ export default async function AccountPage({ searchParams }: AccountPageProps) {
     createdAt: acc.createdAt,
   }))
 
-  const hasPassword = Boolean((fullUser as any).hash)
+  const hasPassword = (fullUser as any).hasPassword === true && Boolean((fullUser as any).hash)
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-8">

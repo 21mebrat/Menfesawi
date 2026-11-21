@@ -103,6 +103,21 @@ export async function GET(request: Request) {
       return res
     }
 
+    // Verify activation against current persisted database record
+    const persistedUser = await payload.findByID({
+      collection: 'users',
+      id: currentUser.id,
+      overrideAccess: true,
+    })
+
+    if (!persistedUser || (persistedUser as any).isActive === false) {
+      const res = NextResponse.redirect(
+        new URL('/login?error=account_inactive', getAppBaseURL()),
+      )
+      clearOAuthCookie(res)
+      return res
+    }
+
     // Check if this provider account is already linked
     const existingAccounts = await payload.find({
       collection: 'auth-accounts',
@@ -262,6 +277,7 @@ export async function GET(request: Request) {
         role: 'member',
         avatarURL: picture || '',
         isActive: true,
+        hasPassword: false,
       })
       newUser = await payload.findByID({
         collection: 'users',
@@ -278,6 +294,7 @@ export async function GET(request: Request) {
           role: 'member',
           avatarURL: picture || '',
           isActive: true,
+          hasPassword: false,
           password: randomPassword,
         },
         overrideAccess: true,

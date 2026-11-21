@@ -14,6 +14,21 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
     }
 
+    // Check full user record and verify activation against current persisted database state FIRST
+    const fullUser = await payload.findByID({
+      collection: 'users',
+      id: user.id,
+      overrideAccess: true,
+      showHiddenFields: true,
+    })
+
+    if (!fullUser || (fullUser as any).isActive === false) {
+      return NextResponse.json(
+        { error: 'Account is inactive. Please contact an administrator.' },
+        { status: 403 },
+      )
+    }
+
     // Check all linked provider accounts for this user
     const linkedAccounts = await payload.find({
       collection: 'auth-accounts',
@@ -30,15 +45,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'No linked Google account found.' }, { status: 404 })
     }
 
-    // Check if unlinking would leave the user with no login method
-    const fullUser = await payload.findByID({
-      collection: 'users',
-      id: user.id,
-      overrideAccess: true,
-      showHiddenFields: true,
-    })
-
-    const hasUsablePassword = Boolean((fullUser as any).hash)
+    // A usable password strictly requires hasPassword === true AND a valid hash.
+    // An undisclosed random-password hash without hasPassword === true is NEVER considered usable.
+    const hasUsablePassword =
+      (fullUser as any).hasPassword === true && Boolean((fullUser as any).hash)
     const otherAccountsCount = linkedAccounts.docs.filter((acc) => acc.provider !== 'google').length
 
     if (!hasUsablePassword && otherAccountsCount === 0) {

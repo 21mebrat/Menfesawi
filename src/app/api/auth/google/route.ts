@@ -31,6 +31,17 @@ export async function GET(request: Request) {
           new URL('/login?error=auth_required_for_linking', request.url),
         )
       }
+      // Verify activation against current persisted database record
+      const persisted = await payload.findByID({
+        collection: 'users',
+        id: user.id,
+        overrideAccess: true,
+      })
+      if (!persisted || (persisted as any).isActive === false) {
+        return NextResponse.redirect(
+          new URL('/login?error=account_inactive', request.url),
+        )
+      }
       currentUserId = user.id
     }
 

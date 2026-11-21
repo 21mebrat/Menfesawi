@@ -80,8 +80,10 @@ export async function destroyPayloadSession(args: {
   if (sid && user?.id) {
     // Atomic session removal directly at the database level to prevent
     // race conditions, stale snapshot rewrites, and restoring concurrent sessions.
-    const userModel = payload.db.collections?.users
-    const rawCollection = (payload.db as any).connection?.collection('users')
+    const userModel = payload.db.collections?.users || (payload.db as any).models?.users
+    const rawCollection =
+      (payload.db as any).connection?.collection('users') ||
+      (payload.db as any).client?.db()?.collection('users')
 
     const pullFilter = {
       $pull: {
@@ -99,24 +101,9 @@ export async function destroyPayloadSession(args: {
     } else if (rawCollection && typeof rawCollection.updateOne === 'function') {
       await rawCollection.updateOne({ _id: user.id }, pullFilter)
     } else {
-      // Fallback: update sessions array only, avoiding writing whole user doc
-      const freshUser = await payload.db.findOne({
-        collection: 'users',
-        req: req as any,
-        where: { id: { equals: user.id } },
-      })
-      if (freshUser && Array.isArray((freshUser as any).sessions)) {
-        const remaining = removeExpiredSessions(
-          (freshUser as any).sessions.filter((s: any) => s.id !== sid),
-        )
-        await payload.db.updateOne({
-          id: user.id,
-          collection: 'users',
-          data: { sessions: remaining } as any,
-          req: req as any,
-          returning: false,
-        })
-      }
+      throw new Error(
+        'Failed to execute atomic session revocation: MongoDB atomic update interface is unavailable.',
+      )
     }
   }
 

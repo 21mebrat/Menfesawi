@@ -59,6 +59,7 @@ export async function POST(request: Request) {
         password,
         role: 'member',
         isActive: true,
+        hasPassword: true,
       },
       overrideAccess: true,
     })

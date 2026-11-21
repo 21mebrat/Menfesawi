@@ -25,6 +25,7 @@ import {
   destroyPayloadSession,
 } from '@/lib/auth/session'
 import { GET as handleGoogleCallback } from '@/app/api/auth/google/callback/route'
+import { GET as handleGoogleInit } from '@/app/api/auth/google/route'
 import { POST as handleUnlink } from '@/app/api/auth/google/unlink/route'
 import { POST as handleRegister } from '@/app/api/auth/register/route'
 import { OAuth2Client } from 'google-auth-library'
@@ -647,57 +648,109 @@ describe('Menfesawi Authentication & Access Control', () => {
   })
 
   // -------------------------------------------------------------
-  // 14. Unlinking Account logic
+  // 14. Unlinking Account logic across supported provisioning paths
   // -------------------------------------------------------------
-  it('prevents unlinking when it is the only login method, but allows unlinking when password exists', async () => {
-    // Create OAuth-only user (without password hash)
+  it('prevents Google-only users from unlinking their only login method across every provisioning path', async () => {
+    // Path 1: First-time Google OAuth callback user (passwordless, hasPassword: false)
     const UserModel = payload.db.collections.users
-    const rawUser = await UserModel.create({
-      email: `oauth-only-${Date.now()}@menfesawi.test`,
-      name: 'OAuth Only User',
+    const rawUser1 = await UserModel.create({
+      email: `oauth-path1-${Date.now()}@menfesawi.test`,
+      name: 'OAuth Path 1 User',
       role: 'member',
       isActive: true,
+      hasPassword: false,
     })
-    const oauthUser = await payload.findByID({
+    const oauthUser1 = await payload.findByID({
       collection: 'users',
-      id: rawUser._id.toString(),
+      id: rawUser1._id.toString(),
       overrideAccess: true,
     })
 
-    const authAcc = await payload.create({
+    const authAcc1 = await payload.create({
       collection: 'auth-accounts',
       data: {
-        user: oauthUser.id,
+        user: oauthUser1.id,
         provider: 'google',
-        providerAccountId: `sub-oauth-only-${Date.now()}`,
+        providerAccountId: `sub-oauth-path1-${Date.now()}`,
       },
       overrideAccess: true,
     })
 
-    // Create session for oauthUser
-    const { token } = await createPayloadSessionForUser({
+    const { token: token1 } = await createPayloadSessionForUser({
       payload,
-      user: oauthUser,
+      user: oauthUser1,
     })
 
-    // Try to unlink: should fail because no local password exists
-    const unlinkReq = new Request('http://localhost:3000/api/auth/google/unlink', {
+    const unlinkReq1 = new Request('http://localhost:3000/api/auth/google/unlink', {
       method: 'POST',
-      headers: {
-        cookie: `payload-token=${token}`,
+      headers: { cookie: `payload-token=${token1}` },
+    })
+    const unlinkRes1 = await handleUnlink(unlinkReq1)
+    expect(unlinkRes1.status).toBe(400)
+    const data1 = await unlinkRes1.json()
+    expect(data1.error).toContain('Cannot unlink your only login method')
+
+    // Path 2: Account provisioned with undisclosed random-password hash, but hasPassword: false
+    // Proves that an undisclosed password hash is NEVER treated as a usable password
+    const oauthUser2 = await payload.create({
+      collection: 'users',
+      data: {
+        email: `oauth-randomhash-${Date.now()}@menfesawi.test`,
+        name: 'OAuth Random Hash User',
+        role: 'member',
+        isActive: true,
+        hasPassword: false,
+        password: generateRandomHex(32), // Random undisclosed password
       },
+      overrideAccess: true,
     })
 
-    const unlinkRes = await handleUnlink(unlinkReq)
-    expect(unlinkRes.status).toBe(400)
-    const data = await unlinkRes.json()
-    expect(data.error).toContain('Cannot unlink your only login method')
+    const authAcc2 = await payload.create({
+      collection: 'auth-accounts',
+      data: {
+        user: oauthUser2.id,
+        provider: 'google',
+        providerAccountId: `sub-oauth-randomhash-${Date.now()}`,
+      },
+      overrideAccess: true,
+    })
 
-    // Clean up oauth-only user
-    await payload.delete({ collection: 'auth-accounts', id: authAcc.id, overrideAccess: true })
-    await UserModel.deleteOne({ _id: rawUser._id })
+    const { token: token2 } = await createPayloadSessionForUser({
+      payload,
+      user: oauthUser2,
+    })
 
-    // Now test a user who DOES have a local password (memberUser1)
+    const unlinkReq2 = new Request('http://localhost:3000/api/auth/google/unlink', {
+      method: 'POST',
+      headers: { cookie: `payload-token=${token2}` },
+    })
+    const unlinkRes2 = await handleUnlink(unlinkReq2)
+    expect(unlinkRes2.status).toBe(400)
+    const data2 = await unlinkRes2.json()
+    expect(data2.error).toContain('Cannot unlink your only login method')
+
+    // Path 3: Multi-provider user (Google + Apple) without local password
+    // Can unlink Google because another provider account is linked
+    const authAcc2Secondary = await payload.create({
+      collection: 'auth-accounts',
+      data: {
+        user: oauthUser2.id,
+        provider: 'apple',
+        providerAccountId: `apple-${Date.now()}`,
+      },
+      overrideAccess: true,
+    })
+
+    const unlinkReqMulti = new Request('http://localhost:3000/api/auth/google/unlink', {
+      method: 'POST',
+      headers: { cookie: `payload-token=${token2}` },
+    })
+    const unlinkResMulti = await handleUnlink(unlinkReqMulti)
+    expect(unlinkResMulti.status).toBe(200)
+    const dataMulti = await unlinkResMulti.json()
+    expect(dataMulti.success).toBe(true)
+
+    // Path 4: User who registered with a usable password (memberUser1)
     const linkedAcc = await payload.create({
       collection: 'auth-accounts',
       data: {
@@ -715,21 +768,24 @@ describe('Menfesawi Authentication & Access Control', () => {
 
     const allowedUnlinkReq = new Request('http://localhost:3000/api/auth/google/unlink', {
       method: 'POST',
-      headers: {
-        cookie: `payload-token=${pwUserToken}`,
-      },
+      headers: { cookie: `payload-token=${pwUserToken}` },
     })
-
     const allowedRes = await handleUnlink(allowedUnlinkReq)
     expect(allowedRes.status).toBe(200)
     const allowedData = await allowedRes.json()
     expect(allowedData.success).toBe(true)
+
+    // Clean up
+    await payload.delete({ collection: 'auth-accounts', id: authAcc1.id, overrideAccess: true })
+    await UserModel.deleteOne({ _id: rawUser1._id })
+    await payload.delete({ collection: 'auth-accounts', id: authAcc2Secondary.id, overrideAccess: true })
+    await payload.delete({ collection: 'users', id: oauthUser2.id, overrideAccess: true })
   })
 
   // -------------------------------------------------------------
-  // 15. Inactive users across OAuth callback and access helpers
+  // 15. Inactive users across OAuth linking/unlinking routes and access helpers
   // -------------------------------------------------------------
-  it('rejects inactive users on OAuth callback and across access helpers', async () => {
+  it('rejects inactive users on OAuth callback, linking initiation, unlinking, and access helpers', async () => {
     // 1. OAuth callback for deactivated returning user
     const inactiveSub = `sub-inactive-${Date.now()}`
     const inactiveAuthAccount = await payload.create({
@@ -761,9 +817,7 @@ describe('Menfesawi Authentication & Access Control', () => {
     })
 
     const callbackReq = new Request(`http://localhost:3000/api/auth/google/callback?code=mock_code&state=${state}`, {
-      headers: {
-        cookie: `${OAUTH_COOKIE_NAME}=${cookieVal}`,
-      },
+      headers: { cookie: `${OAUTH_COOKIE_NAME}=${cookieVal}` },
     })
 
     const callbackRes = await handleGoogleCallback(callbackReq)
@@ -774,7 +828,30 @@ describe('Menfesawi Authentication & Access Control', () => {
 
     await payload.delete({ collection: 'auth-accounts', id: inactiveAuthAccount.id, overrideAccess: true })
 
-    // 2. Access helpers verify inactive users have no access
+    // 2. Inactive user attempting to initiate Google linking (/api/auth/google?action=link)
+    const { token: inactiveToken } = await createPayloadSessionForUser({
+      payload,
+      user: inactiveUser,
+    })
+
+    const linkInitReq = new Request('http://localhost:3000/api/auth/google?action=link', {
+      headers: { cookie: `payload-token=${inactiveToken}` },
+    })
+    const linkInitRes = await handleGoogleInit(linkInitReq)
+    expect(linkInitRes.status).toBe(307)
+    expect(linkInitRes.headers.get('location')).toContain('error=account_inactive')
+
+    // 3. Inactive user attempting to unlink Google (/api/auth/google/unlink)
+    const unlinkInactiveReq = new Request('http://localhost:3000/api/auth/google/unlink', {
+      method: 'POST',
+      headers: { cookie: `payload-token=${inactiveToken}` },
+    })
+    const unlinkInactiveRes = await handleUnlink(unlinkInactiveReq)
+    expect(unlinkInactiveRes.status).toBe(403)
+    const unlinkInactiveData = await unlinkInactiveRes.json()
+    expect(unlinkInactiveData.error).toContain('Account is inactive')
+
+    // 4. Access helpers verify inactive users have no access
     expect(isAuthenticated({ id: '1', isActive: false })).toBe(false)
     expect(isAdmin({ id: '1', role: 'admin', isActive: false })).toBe(false)
     expect(isEditor({ id: '1', role: 'editor', isActive: false })).toBe(false)
@@ -860,58 +937,68 @@ describe('Menfesawi Authentication & Access Control', () => {
   // -------------------------------------------------------------
   // 17. Atomic concurrent session logout
   // -------------------------------------------------------------
-  it('performs atomic session revocation without restoring or overwriting other sessions', async () => {
-    // Create two active sessions for memberUser2
-    const session1 = await createPayloadSessionForUser({ payload, user: memberUser2 })
-    const session2 = await createPayloadSessionForUser({ payload, user: memberUser2 })
+  it('performs atomic session revocation with overlapping concurrent requests without restoring or overwriting sessions', async () => {
+    // Create 5 concurrent sessions simultaneously for memberUser2
+    const sessions = await Promise.all([
+      createPayloadSessionForUser({ payload, user: memberUser2 }),
+      createPayloadSessionForUser({ payload, user: memberUser2 }),
+      createPayloadSessionForUser({ payload, user: memberUser2 }),
+      createPayloadSessionForUser({ payload, user: memberUser2 }),
+      createPayloadSessionForUser({ payload, user: memberUser2 }),
+    ])
 
-    expect(session1.sid).toBeDefined()
-    expect(session2.sid).toBeDefined()
-    expect(session1.sid).not.toBe(session2.sid)
+    const sids = sessions.map((s) => s.sid).filter(Boolean) as string[]
+    expect(sids.length).toBe(5)
+    expect(new Set(sids).size).toBe(5)
 
-    // Verify both are present on the user
+    // Verify all 5 sessions are recorded in the database
     let userRecord = await payload.findByID({
       collection: 'users',
       id: memberUser2.id,
       overrideAccess: true,
     })
-    let sids = ((userRecord as any).sessions || []).map((s: any) => s.id)
-    expect(sids).toContain(session1.sid)
-    expect(sids).toContain(session2.sid)
+    let recordedSids = ((userRecord as any).sessions || []).map((s: any) => s.id)
+    for (const sid of sids) {
+      expect(recordedSids).toContain(sid)
+    }
 
-    // Revoke session 1
-    await destroyPayloadSession({
-      payload,
-      user: memberUser2,
-      sid: session1.sid,
-    })
+    // Genuinely overlapping concurrent revocations: destroy 3 sessions simultaneously
+    const revokeResults = await Promise.all([
+      destroyPayloadSession({ payload, user: memberUser2, sid: sids[0] }),
+      destroyPayloadSession({ payload, user: memberUser2, sid: sids[1] }),
+      destroyPayloadSession({ payload, user: memberUser2, sid: sids[2] }),
+    ])
+    expect(revokeResults.length).toBe(3)
 
-    // Verify session 1 is removed, but session 2 is STILL present
+    // Check database: sids[0], sids[1], sids[2] MUST be gone, but sids[3] and sids[4] MUST REMAIN!
     userRecord = await payload.findByID({
       collection: 'users',
       id: memberUser2.id,
       overrideAccess: true,
     })
-    sids = ((userRecord as any).sessions || []).map((s: any) => s.id)
-    expect(sids).not.toContain(session1.sid)
-    expect(sids).toContain(session2.sid)
+    recordedSids = ((userRecord as any).sessions || []).map((s: any) => s.id)
+    expect(recordedSids).not.toContain(sids[0])
+    expect(recordedSids).not.toContain(sids[1])
+    expect(recordedSids).not.toContain(sids[2])
+    expect(recordedSids).toContain(sids[3])
+    expect(recordedSids).toContain(sids[4])
 
-    // Revoke session 2
-    await destroyPayloadSession({
-      payload,
-      user: memberUser2,
-      sid: session2.sid,
-    })
+    // Concurrently destroy the remaining 2 sessions
+    await Promise.all([
+      destroyPayloadSession({ payload, user: memberUser2, sid: sids[3] }),
+      destroyPayloadSession({ payload, user: memberUser2, sid: sids[4] }),
+    ])
 
-    // Verify both are gone
+    // Verify all are removed
     userRecord = await payload.findByID({
       collection: 'users',
       id: memberUser2.id,
       overrideAccess: true,
     })
-    sids = ((userRecord as any).sessions || []).map((s: any) => s.id)
-    expect(sids).not.toContain(session1.sid)
-    expect(sids).not.toContain(session2.sid)
+    recordedSids = ((userRecord as any).sessions || []).map((s: any) => s.id)
+    for (const sid of sids) {
+      expect(recordedSids).not.toContain(sid)
+    }
   })
 
   // -------------------------------------------------------------

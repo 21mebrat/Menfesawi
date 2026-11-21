@@ -15,6 +15,11 @@ import { ImageGallery } from './blocks/ImageGallery'
 import { VisualMediaLayout } from './blocks/VisualMediaLayout'
 import { createCloudinaryStorageAdapter, isCloudinaryConfigured } from './lib/media/cloudinary'
 import { cloudStoragePlugin } from '@payloadcms/plugin-cloud-storage'
+import { Categories } from './collections/Categories'
+import { Files } from './collections/Files'
+import { Books } from './collections/Books'
+import { Teachings } from './collections/Teachings'
+import { SocialDeliveries } from './collections/SocialDeliveries'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -95,7 +100,16 @@ export default buildConfig({
       baseDir: path.resolve(dirname),
     },
   },
-  collections: [Users, Media, AuthAccounts],
+  collections: [
+    Users,
+    Media,
+    AuthAccounts,
+    Categories,
+    Files,
+    Books,
+    Teachings,
+    SocialDeliveries,
+  ],
   secret: process.env.PAYLOAD_SECRET || '',
   typescript: {
     outputFile: path.resolve(dirname, 'payload-types.ts'),

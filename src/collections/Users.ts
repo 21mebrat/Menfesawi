@@ -63,6 +63,28 @@ export const Users: CollectionConfig = {
         return user
       },
     ],
+    beforeChange: [
+      ({ data, req, operation }) => {
+        // Protect login-method metadata against client modification
+        const isReqAdmin = Boolean(req?.user && (req.user as any).role === 'admin')
+        if (!isReqAdmin && req?.data && 'hasPassword' in req.data) {
+          delete (data as any).hasPassword
+        }
+
+        // If caller explicitly passed hasPassword: false (e.g. provisioning with undisclosed password)
+        if ((data as any).hasPassword === false) {
+          return data
+        }
+
+        // When a password is being set on create or update:
+        if (data.password) {
+          data.hasPassword = true
+        } else if ((data as any).hasPassword === undefined && operation === 'create') {
+          data.hasPassword = false
+        }
+        return data
+      },
+    ],
   },
   fields: [
     {
@@ -130,6 +152,41 @@ export const Users: CollectionConfig = {
       access: {
         create: isAdminFieldAccess,
         update: isAdminFieldAccess,
+      },
+    },
+    {
+      name: 'hasPassword',
+      type: 'checkbox',
+      admin: {
+        readOnly: true,
+        position: 'sidebar',
+        description: 'Whether this account has an active usable password known to the user.',
+      },
+      access: {
+        create: () => false,
+        update: () => false,
+      },
+    },
+    {
+      name: 'avatar',
+      type: 'upload',
+      relationTo: 'media',
+      localized: false,
+
+      label: {
+        en: 'Profile picture',
+        am: 'የመገለጫ ፎቶ',
+      },
+
+      admin: {
+        description: {
+          en: 'Your uploaded profile picture. Displayed instead of your Google profile picture when selected.',
+          am: 'የሰቀሉት የመገለጫ ፎቶ። ሲመረጥ በGoogle መገለጫ ፎቶዎ ፋንታ ይታያል።',
+        },
+      },
+
+      access: {
+        update: isAdminOrSelfFieldAccess,
       },
     },
   ],

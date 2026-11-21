@@ -25,11 +25,6 @@ export const VisualMediaLayout: Block = {
       am: 'የምስል አቀማመጦች',
     },
   },
-  admin: {
-    components: {
-      Block: '/components/lexical/VisualMediaLayoutBlock',
-    },
-  },
   fields: [
     {
       name: 'layoutData',
