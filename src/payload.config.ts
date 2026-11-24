@@ -24,6 +24,7 @@ import { SocialDeliveries } from './collections/SocialDeliveries'
 import { Publications } from './collections/Publications'
 import { PublicationSections } from './collections/PublicationSections'
 import { Passages } from './collections/Passages'
+import { DailyReadings } from './collections/DailyReadings'
 import { Synaxarium } from './collections/Synaxarium'
 
 const filename = fileURLToPath(import.meta.url)
@@ -119,6 +120,7 @@ export default buildConfig({
     PublicationSections,
     Passages,
     Synaxarium,
+    DailyReadings,
   ],
   secret: process.env.PAYLOAD_SECRET || '',
   typescript: {

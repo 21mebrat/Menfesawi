@@ -191,6 +191,9 @@ export async function getBreadcrumbs(
   return breadcrumbs
 }
 
+// Preserve the Mongo adapter's descending creation-time fallback for equal orders.
+export const passageSort = ['order', '-createdAt', 'id'] satisfies ('order' | '-createdAt' | 'id')[]
+
 /**
  * Retrieves ordered passages within a section.
  */
@@ -205,7 +208,7 @@ export async function getOrderedPassages(
   }
 
   const { findOpts } = buildFindOptions(where, options, {
-    sort: 'order',
+    sort: passageSort,
     limit,
     page,
   })

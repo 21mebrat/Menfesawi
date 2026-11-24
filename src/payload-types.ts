@@ -80,6 +80,7 @@ export interface Config {
     'publication-sections': PublicationSection;
     passages: Passage;
     synaxarium: SynaxariumEntry;
+    'daily-readings': DailyReading;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -100,6 +101,7 @@ export interface Config {
     'publication-sections': PublicationSectionsSelect<false> | PublicationSectionsSelect<true>;
     passages: PassagesSelect<false> | PassagesSelect<true>;
     synaxarium: SynaxariumSelect<false> | SynaxariumSelect<true>;
+    'daily-readings': DailyReadingsSelect<false> | DailyReadingsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -783,6 +785,45 @@ export interface SynaxariumEntry {
   _status?: ('draft' | 'published') | null;
 }
 /**
+ * For an Ethiopian date, include all recurring sets for the month and day and all sets for that exact year, month and day. Sort the combined results by order, then ID, both ascending.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "daily-readings".
+ */
+export interface DailyReading {
+  id: string;
+  title: string;
+  /**
+   * A stable identifier shared across languages. Use lowercase English letters, numbers, and single hyphens.
+   */
+  slug: string;
+  introduction?: string | null;
+  dateMode: 'recurring' | 'specific-year';
+  ethiopianYear?: number | null;
+  ethiopianMonth: '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | '10' | '11' | '12' | '13';
+  /**
+   * Pagumen 6 occurs only in Ethiopian leap years. When resolving this date for a specific year, check that the year is a leap year.
+   */
+  ethiopianDay: number;
+  /**
+   * Leave both passages empty for the whole section. Select only a start for one passage, or both endpoints for an inclusive range.
+   */
+  readings?:
+    | {
+        label: string;
+        section: string | PublicationSection;
+        startPassage?: (string | null) | Passage;
+        endPassage?: (string | null) | Passage;
+        id?: string | null;
+      }[]
+    | null;
+  commemorations?: (string | SynaxariumEntry)[] | null;
+  order: number;
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
@@ -857,6 +898,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'synaxarium';
         value: string | SynaxariumEntry;
+      } | null)
+    | ({
+        relationTo: 'daily-readings';
+        value: string | DailyReading;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -1266,6 +1311,33 @@ export interface SynaxariumSelect<T extends boolean = true> {
         section?: T;
         id?: T;
       };
+  order?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "daily-readings_select".
+ */
+export interface DailyReadingsSelect<T extends boolean = true> {
+  title?: T;
+  slug?: T;
+  introduction?: T;
+  dateMode?: T;
+  ethiopianYear?: T;
+  ethiopianMonth?: T;
+  ethiopianDay?: T;
+  readings?:
+    | T
+    | {
+        label?: T;
+        section?: T;
+        startPassage?: T;
+        endPassage?: T;
+        id?: T;
+      };
+  commemorations?: T;
   order?: T;
   updatedAt?: T;
   createdAt?: T;
