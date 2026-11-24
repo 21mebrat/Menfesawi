@@ -33,6 +33,8 @@ export async function POST(request: Request) {
     const linkedAccounts = await payload.find({
       collection: 'auth-accounts',
       where: {
+        // Telegram handoffs are linked identities, not website sign-in methods.
+        provider: { not_equals: 'telegram' },
         user: {
           equals: user.id,
         },

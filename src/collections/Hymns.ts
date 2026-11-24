@@ -1,3 +1,4 @@
+import { categoryReferences } from '../lib/server/library/catalog'
 import type { CollectionBeforeValidateHook, CollectionConfig } from 'payload'
 import { ValidationError } from 'payload'
 
@@ -292,7 +293,7 @@ export const Hymns: CollectionConfig = {
   },
 
   hooks: {
-    beforeValidate: [beforeValidateHymn],
+    beforeValidate: [beforeValidateHymn, categoryReferences],
   },
 
   fields: [

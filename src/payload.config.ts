@@ -17,6 +17,8 @@ import { createCloudinaryStorageAdapter, isCloudinaryConfigured } from './lib/me
 import { cloudStoragePlugin } from '@payloadcms/plugin-cloud-storage'
 import { Categories } from './collections/Categories'
 import { Files } from './collections/Files'
+import { BookRatings } from './collections/BookRatings'
+import { BookDeliveries } from './collections/BookDeliveries'
 import { Books } from './collections/Books'
 import { Teachings } from './collections/Teachings'
 import { Hymns } from './collections/Hymns'
@@ -113,6 +115,8 @@ export default buildConfig({
     Categories,
     Files,
     Books,
+    BookRatings,
+    BookDeliveries,
     Teachings,
     Hymns,
     SocialDeliveries,

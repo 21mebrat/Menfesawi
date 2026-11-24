@@ -1,3 +1,4 @@
+import { categoryReferences } from '../lib/server/library/catalog'
 import type { CollectionConfig } from 'payload'
 
 import {
@@ -110,6 +111,7 @@ export const Teachings: CollectionConfig = {
     },
   },
   hooks: {
+    beforeValidate: [categoryReferences],
     afterChange: [queueTeachingAnnouncements]
   },
 

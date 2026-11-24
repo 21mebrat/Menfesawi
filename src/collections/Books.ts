@@ -1,3 +1,4 @@
+import { validateBook, categoryReferences, liveOnly, guardDeletion } from '../lib/server/library/catalog'
 import type { CollectionConfig } from 'payload'
 
 import {
@@ -76,6 +77,11 @@ export const Books: CollectionConfig = {
         },
     },
 
+    hooks: {
+        beforeOperation: [liveOnly],
+        beforeValidate: [categoryReferences, validateBook],
+        beforeDelete: [guardDeletion],
+    },
     versions: {
         drafts: true,
         maxPerDoc: 30,
@@ -100,6 +106,7 @@ export const Books: CollectionConfig = {
             type: 'text',
             required: true,
             unique: true,
+            index: true,
             maxLength: 150,
 
             label: {
@@ -244,6 +251,14 @@ export const Books: CollectionConfig = {
             },
         },
 
+        {
+            name: 'file',
+            type: 'relationship',
+            relationTo: 'files',
+            label: { en: 'Primary PDF', am: 'ዋና ፒዲኤፍ' },
+            access: { read: ({ req }) => isStaff(req.user) },
+            filterOptions: { mimeType: { equals: 'application/pdf' } },
+        },
         {
             name: 'files',
             type: 'relationship',

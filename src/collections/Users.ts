@@ -1,3 +1,4 @@
+import { guardDeletion } from '../lib/server/library/catalog'
 import type { CollectionConfig } from 'payload'
 import { APIError } from 'payload'
 import {
@@ -54,6 +55,7 @@ export const Users: CollectionConfig = {
     delete: canDeleteUser,
   },
   hooks: {
+    beforeDelete: [guardDeletion],
     beforeLogin: [
       ({ user }) => {
         const authUser = user as unknown as UserAuth

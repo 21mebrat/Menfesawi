@@ -53,6 +53,10 @@ export const AuthAccounts: CollectionConfig = {
           value: 'google',
         },
         {
+          label: 'Telegram',
+          value: 'telegram',
+        },
+        {
           label: 'Apple',
           value: 'apple',
         },

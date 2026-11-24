@@ -1,3 +1,4 @@
+import { validateCategory, readCategories, liveOnly, guardDeletion } from '../lib/server/library/catalog'
 import type { CollectionConfig } from 'payload'
 
 import {
@@ -39,7 +40,8 @@ export const Categories: CollectionConfig = {
     access: {
         admin: canAccessAdmin,
 
-        read: () => true,
+        read: readCategories,
+        readVersions: ({ req }) => isStaff(req.user),
 
         create: ({ req }) => {
             return isStaff(req.user as UserAuth | null)
@@ -54,7 +56,20 @@ export const Categories: CollectionConfig = {
         },
     },
 
+    versions: { drafts: { validate: true }, maxPerDoc: 30 },
+    hooks: {
+        beforeOperation: [liveOnly],
+        beforeValidate: [validateCategory],
+        beforeDelete: [guardDeletion],
+    },
     fields: [
+        {
+            name: 'parent',
+            type: 'relationship',
+            relationTo: 'categories',
+            index: true,
+            label: { en: 'Parent category', am: 'ወላጅ ምድብ' },
+        },
         {
             name: 'name',
             type: 'text',
@@ -80,6 +95,7 @@ export const Categories: CollectionConfig = {
             type: 'text',
             required: true,
             unique: true,
+            index: true,
             localized: false,
             maxLength: 100,
 

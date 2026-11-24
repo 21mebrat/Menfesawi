@@ -56,6 +56,8 @@ export default async function AccountPage({ searchParams }: AccountPageProps) {
   const authAccountsResult = await payload.find({
     collection: 'auth-accounts',
     where: {
+      // Telegram handoffs are linked identities, not website sign-in methods.
+      provider: { not_equals: 'telegram' },
       user: {
         equals: user.id,
       },

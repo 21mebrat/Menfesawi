@@ -1,3 +1,4 @@
+import { guardDeletion } from '../lib/server/library/catalog'
 import type { CollectionConfig } from 'payload'
 
 import {
@@ -22,6 +23,7 @@ export const Files: CollectionConfig = {
     },
 
     admin: {
+        components: { beforeListTable: ['/components/BookUpload#BookUpload'] },
         group: {
             en: 'Content',
             am: 'ይዘት',
@@ -33,6 +35,7 @@ export const Files: CollectionConfig = {
             'originalFilename',
             'mimeType',
             'sizeBytes',
+            'ingestionStatus',
             'isAvailable',
             'updatedAt',
         ],
@@ -53,9 +56,7 @@ export const Files: CollectionConfig = {
             return isStaff(req.user as UserAuth | null)
         },
 
-        create: ({ req }) => {
-            return isStaff(req.user as UserAuth | null)
-        },
+        create: () => false,
 
         update: ({ req }) => {
             return isStaff(req.user as UserAuth | null)
@@ -66,9 +67,33 @@ export const Files: CollectionConfig = {
         },
     },
 
+    hooks: { beforeDelete: [guardDeletion] },
     fields: [
         {
+            name: 'ingestionStatus',
+            type: 'select',
+            label: { en: 'Upload status', am: 'የሰቀላ ሁኔታ' },
+            options: ['pending', 'ready', 'failed'],
+            access: { update: () => false },
+            admin: { readOnly: true },
+        },
+        {
+            name: 'ingestionFailure',
+            type: 'select',
+            label: { en: 'Upload outcome', am: 'የሰቀላ ውጤት' },
+            options: ['rejected', 'uncertain'],
+            access: { update: () => false },
+            admin: { readOnly: true },
+        },
+        {
+            name: 'ingestKey',
+            type: 'text',
+            access: { update: () => false },
+            admin: { hidden: true },
+        },
+        {
             name: 'originalFilename',
+            access: { update: () => false },
             type: 'text',
             required: true,
             maxLength: 255,
@@ -90,6 +115,7 @@ export const Files: CollectionConfig = {
 
         {
             name: 'mimeType',
+            access: { update: () => false },
             type: 'text',
             required: true,
             maxLength: 150,
@@ -111,6 +137,7 @@ export const Files: CollectionConfig = {
 
         {
             name: 'sizeBytes',
+            access: { update: () => false },
             type: 'number',
             min: 1,
 
@@ -163,6 +190,7 @@ export const Files: CollectionConfig = {
 
         {
             name: 'telegram',
+            access: { update: () => false },
             type: 'group',
 
             label: {
@@ -181,7 +209,7 @@ export const Files: CollectionConfig = {
                 {
                     name: 'fileId',
                     type: 'text',
-                    required: true,
+                    required: false,
 
                     label: {
                         en: 'Telegram file ID',
@@ -189,7 +217,7 @@ export const Files: CollectionConfig = {
                     },
 
                     validate: (value: unknown) => {
-                        return (
+                        return value == null || (
                             (typeof value === 'string' &&
                                 value.trim().length > 0 &&
                                 value === value.trim()) ||
@@ -205,6 +233,7 @@ export const Files: CollectionConfig = {
                     },
                 },
 
+                { name: 'messageId', type: 'number', min: 1, label: { en: 'Storage message ID', am: 'የማከማቻ መልእክት መለያ' } },
                 {
                     name: 'fileUniqueId',
                     type: 'text',

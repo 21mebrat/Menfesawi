@@ -73,6 +73,8 @@ export interface Config {
     categories: Category;
     files: File;
     books: Book;
+    'book-ratings': BookRating;
+    'book-deliveries': BookDelivery;
     teachings: Teaching;
     hymns: Hymn;
     'social-deliveries': SocialDelivery;
@@ -94,6 +96,8 @@ export interface Config {
     categories: CategoriesSelect<false> | CategoriesSelect<true>;
     files: FilesSelect<false> | FilesSelect<true>;
     books: BooksSelect<false> | BooksSelect<true>;
+    'book-ratings': BookRatingsSelect<false> | BookRatingsSelect<true>;
+    'book-deliveries': BookDeliveriesSelect<false> | BookDeliveriesSelect<true>;
     teachings: TeachingsSelect<false> | TeachingsSelect<true>;
     hymns: HymnsSelect<false> | HymnsSelect<true>;
     'social-deliveries': SocialDeliveriesSelect<false> | SocialDeliveriesSelect<true>;
@@ -224,7 +228,6 @@ export interface Media {
    * Record the license, permission, or copyright information.
    */
   rights?: string | null;
-  _objectKey?: string | null;
   updatedAt: string;
   createdAt: string;
   url?: string | null;
@@ -244,7 +247,7 @@ export interface Media {
 export interface AuthAccount {
   id: string;
   user: string | User;
-  provider: 'google' | 'apple';
+  provider: 'google' | 'telegram' | 'apple';
   providerAccountId: string;
   issuer?: string | null;
   updatedAt: string;
@@ -258,6 +261,7 @@ export interface AuthAccount {
  */
 export interface Category {
   id: string;
+  parent?: (string | null) | Category;
   /**
    * The category name displayed in the selected content language.
    */
@@ -276,6 +280,7 @@ export interface Category {
   contentTypes: ('books' | 'teachings' | 'hymns' | 'articles')[];
   updatedAt: string;
   createdAt: string;
+  _status?: ('draft' | 'published') | null;
 }
 /**
  * Private Telegram file records. Members receive files through the bot after signing in.
@@ -285,6 +290,9 @@ export interface Category {
  */
 export interface File {
   id: string;
+  ingestionStatus?: ('pending' | 'ready' | 'failed') | null;
+  ingestionFailure?: ('rejected' | 'uncertain') | null;
+  ingestKey?: string | null;
   /**
    * The filename reported by Telegram. Store the book title separately in the library.
    */
@@ -304,11 +312,12 @@ export interface File {
   /**
    * Private file identifiers. Configure the storage group and bot credentials in environment variables.
    */
-  telegram: {
+  telegram?: {
     /**
      * Use the file ID received by the same bot that delivers the document.
      */
-    fileId: string;
+    fileId?: string | null;
+    messageId?: number | null;
     /**
      * For identifying duplicate files only. Not used for delivery.
      */
@@ -350,6 +359,7 @@ export interface Book {
    */
   language: ('am' | 'gez' | 'en')[];
   categories?: (string | Category)[] | null;
+  file?: (string | null) | File;
   /**
    * Private file records for this book. Delivery must separately check login and file availability.
    */
@@ -357,6 +367,40 @@ export interface Book {
   updatedAt: string;
   createdAt: string;
   _status?: ('draft' | 'published') | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "book-ratings".
+ */
+export interface BookRating {
+  id: string;
+  book: string | Book;
+  user: string | User;
+  score: number;
+  review?: string | null;
+  reviewHash?: string | null;
+  reviewStatus: 'pending' | 'published' | 'hidden';
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "book-deliveries".
+ */
+export interface BookDelivery {
+  id: string;
+  book: string | Book;
+  file: string | File;
+  user: string | User;
+  bookRevision: string;
+  ticketHash: string;
+  telegramUser: string;
+  expiresAt: string;
+  state: 'pending' | 'sent' | 'failed' | 'uncertain';
+  messageId?: number | null;
+  failure?: string | null;
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * Religious teachings with optional videos and external resources.
@@ -872,6 +916,14 @@ export interface PayloadLockedDocument {
         value: string | Book;
       } | null)
     | ({
+        relationTo: 'book-ratings';
+        value: string | BookRating;
+      } | null)
+    | ({
+        relationTo: 'book-deliveries';
+        value: string | BookDelivery;
+      } | null)
+    | ({
         relationTo: 'teachings';
         value: string | Teaching;
       } | null)
@@ -987,7 +1039,6 @@ export interface MediaSelect<T extends boolean = true> {
   credit?: T;
   sourceURL?: T;
   rights?: T;
-  _objectKey?: T;
   updatedAt?: T;
   createdAt?: T;
   url?: T;
@@ -1017,18 +1068,23 @@ export interface AuthAccountsSelect<T extends boolean = true> {
  * via the `definition` "categories_select".
  */
 export interface CategoriesSelect<T extends boolean = true> {
+  parent?: T;
   name?: T;
   slug?: T;
   description?: T;
   contentTypes?: T;
   updatedAt?: T;
   createdAt?: T;
+  _status?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "files_select".
  */
 export interface FilesSelect<T extends boolean = true> {
+  ingestionStatus?: T;
+  ingestionFailure?: T;
+  ingestKey?: T;
   originalFilename?: T;
   mimeType?: T;
   sizeBytes?: T;
@@ -1037,6 +1093,7 @@ export interface FilesSelect<T extends boolean = true> {
     | T
     | {
         fileId?: T;
+        messageId?: T;
         fileUniqueId?: T;
       };
   rights?: T;
@@ -1060,10 +1117,43 @@ export interface BooksSelect<T extends boolean = true> {
       };
   language?: T;
   categories?: T;
+  file?: T;
   files?: T;
   updatedAt?: T;
   createdAt?: T;
   _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "book-ratings_select".
+ */
+export interface BookRatingsSelect<T extends boolean = true> {
+  book?: T;
+  user?: T;
+  score?: T;
+  review?: T;
+  reviewHash?: T;
+  reviewStatus?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "book-deliveries_select".
+ */
+export interface BookDeliveriesSelect<T extends boolean = true> {
+  book?: T;
+  file?: T;
+  user?: T;
+  bookRevision?: T;
+  ticketHash?: T;
+  telegramUser?: T;
+  expiresAt?: T;
+  state?: T;
+  messageId?: T;
+  failure?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
