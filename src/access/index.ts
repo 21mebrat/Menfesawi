@@ -5,13 +5,12 @@ export type UserRole = 'admin' | 'editor' | 'member'
 export interface UserAuth {
   id: string | number
   email?: string
-  name?: string
-  role?: UserRole
-  avatarURL?: string
-  isActive?: boolean
+  name?: string | null
+  role?: UserRole | null
+  avatarURL?: string | null
+  isActive?: boolean | null
   hasPassword?: boolean | null
   collection?: string
-  [key: string]: unknown
 }
 
 /**

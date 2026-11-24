@@ -75,6 +75,10 @@ export interface Config {
     books: Book;
     teachings: Teaching;
     'social-deliveries': SocialDelivery;
+    publications: Publication;
+    'publication-sections': PublicationSection;
+    passages: Passage;
+    synaxarium: SynaxariumEntry;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -90,6 +94,10 @@ export interface Config {
     books: BooksSelect<false> | BooksSelect<true>;
     teachings: TeachingsSelect<false> | TeachingsSelect<true>;
     'social-deliveries': SocialDeliveriesSelect<false> | SocialDeliveriesSelect<true>;
+    publications: PublicationsSelect<false> | PublicationsSelect<true>;
+    'publication-sections': PublicationSectionsSelect<false> | PublicationSectionsSelect<true>;
+    passages: PassagesSelect<false> | PassagesSelect<true>;
+    synaxarium: SynaxariumSelect<false> | SynaxariumSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -463,6 +471,229 @@ export interface SocialDelivery {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "publications".
+ */
+export interface Publication {
+  id: string;
+  isDeleting?: boolean | null;
+  /**
+   * Publication title (e.g., The Holy Bible, Wudase Maryam).
+   */
+  title: string;
+  /**
+   * URL-friendly identifier unique across publications.
+   */
+  slug: string;
+  /**
+   * Overview or historical context of this publication.
+   */
+  description?: string | null;
+  /**
+   * Traditional or historical author/translator attribution.
+   */
+  attribution?: string | null;
+  /**
+   * Rights, copyright, or liturgical heritage information.
+   */
+  rights?: string | null;
+  structure: {
+    /**
+     * Maximum hierarchy depth (1 to 10) permitted for sections.
+     */
+    maxDepth: number;
+    sectionTypes: {
+      /**
+       * Stable identifier (e.g., testament, book, chapter, day, prayer).
+       */
+      key: string;
+      labels: {
+        singular: {
+          en: string;
+          am: string;
+        };
+        plural: {
+          en: string;
+          am: string;
+        };
+      };
+      actionLabels?: {
+        en?: string | null;
+        am?: string | null;
+      };
+      allowedAtRoot?: boolean | null;
+      allowedChildTypes?:
+        | {
+            typeKey: string;
+            id?: string | null;
+          }[]
+        | null;
+      allowPassages?: boolean | null;
+      passageTerminology?: {
+        singular?: {
+          en?: string | null;
+          am?: string | null;
+        };
+        plural?: {
+          en?: string | null;
+          am?: string | null;
+        };
+      };
+      numberingPolicy: 'required' | 'optional' | 'none';
+      id?: string | null;
+    }[];
+  };
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "publication-sections".
+ */
+export interface PublicationSection {
+  id: string;
+  /**
+   * The publication this section belongs to.
+   */
+  publication: string | Publication;
+  /**
+   * Parent section in hierarchy. Leave empty for root sections.
+   */
+  parent?: (string | null) | PublicationSection;
+  /**
+   * Matches a defined section type key in the publication structure (e.g. book, chapter, day).
+   */
+  typeKey: string;
+  /**
+   * Name of the section (e.g. Genesis, Chapter 1, Sunday Praises).
+   */
+  title: string;
+  /**
+   * Identifier unique among siblings sharing the same parent.
+   */
+  slug: string;
+  introduction?: string | null;
+  /**
+   * Numerical sort index relative to siblings.
+   */
+  order: number;
+  /**
+   * Canonical section number (e.g., chapter number, day number).
+   */
+  number?: number | null;
+  /**
+   * Contextual label (e.g. "Chapter 1" / "ምዕራፍ ፩").
+   */
+  displayLabel?: string | null;
+  /**
+   * Applicable for daily prayers/readings such as Wudase Maryam.
+   */
+  weekday?: ('monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday') | null;
+  depth?: number | null;
+  ancestors?: (string | PublicationSection)[] | null;
+  isPublicationPublished?: boolean | null;
+  isAncestorsPublished?: boolean | null;
+  /**
+   * True only when this section, its publication, and all ancestor sections are published.
+   */
+  isPublishedEffective?: boolean | null;
+  isDeleting?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "passages".
+ */
+export interface Passage {
+  id: string;
+  /**
+   * The section this passage belongs to (e.g. Chapter 1, Sunday Prayer).
+   */
+  section: string | PublicationSection;
+  /**
+   * Derived automatically from the parent section.
+   */
+  publication?: (string | null) | Publication;
+  /**
+   * Relative sort order within the section.
+   */
+  order: number;
+  /**
+   * Verse or paragraph number (required when configured in publication structure).
+   */
+  number?: number | null;
+  /**
+   * Custom label (e.g., "Verse 1" / "ቁጥር ፩").
+   */
+  displayLabel?: string | null;
+  text?: {
+    /**
+     * Classical Ge’ez liturgical / biblical text with preserved spacing.
+     */
+    geez?: string | null;
+    /**
+     * Amharic translation or commentary text.
+     */
+    amharic?: string | null;
+    /**
+     * English translation with preserved formatting.
+     */
+    english?: string | null;
+  };
+  notes?:
+    | {
+        content: string;
+        visibility: 'public' | 'editorial';
+        source?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  isSectionPublished?: boolean | null;
+  isPublicationPublished?: boolean | null;
+  /**
+   * True only when this passage, its parent section (and ancestors), and the publication are all published.
+   */
+  isPublishedEffective?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
+}
+/**
+ * Lives of saints and commemorations by Ethiopian calendar date.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "synaxarium".
+ */
+export interface SynaxariumEntry {
+  id: string;
+  title: string;
+  /**
+   * A stable identifier shared across languages. Use lowercase English letters, numbers, and single hyphens.
+   */
+  slug: string;
+  summary?: string | null;
+  ethiopianMonth: '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | '10' | '11' | '12' | '13';
+  /**
+   * Pagumen 6 occurs only in Ethiopian leap years. When resolving this date for a specific year, check that the year is a leap year.
+   */
+  ethiopianDay: number;
+  image?: (string | null) | Media;
+  readings?:
+    | {
+        label?: string | null;
+        section: string | PublicationSection;
+        id?: string | null;
+      }[]
+    | null;
+  order: number;
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
 export interface PayloadKv {
@@ -516,6 +747,22 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'social-deliveries';
         value: string | SocialDelivery;
+      } | null)
+    | ({
+        relationTo: 'publications';
+        value: string | Publication;
+      } | null)
+    | ({
+        relationTo: 'publication-sections';
+        value: string | PublicationSection;
+      } | null)
+    | ({
+        relationTo: 'passages';
+        value: string | Passage;
+      } | null)
+    | ({
+        relationTo: 'synaxarium';
+        value: string | SynaxariumEntry;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -737,6 +984,159 @@ export interface SocialDeliveriesSelect<T extends boolean = true> {
   lastError?: T;
   updatedAt?: T;
   createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "publications_select".
+ */
+export interface PublicationsSelect<T extends boolean = true> {
+  isDeleting?: T;
+  title?: T;
+  slug?: T;
+  description?: T;
+  attribution?: T;
+  rights?: T;
+  structure?:
+    | T
+    | {
+        maxDepth?: T;
+        sectionTypes?:
+          | T
+          | {
+              key?: T;
+              labels?:
+                | T
+                | {
+                    singular?:
+                      | T
+                      | {
+                          en?: T;
+                          am?: T;
+                        };
+                    plural?:
+                      | T
+                      | {
+                          en?: T;
+                          am?: T;
+                        };
+                  };
+              actionLabels?:
+                | T
+                | {
+                    en?: T;
+                    am?: T;
+                  };
+              allowedAtRoot?: T;
+              allowedChildTypes?:
+                | T
+                | {
+                    typeKey?: T;
+                    id?: T;
+                  };
+              allowPassages?: T;
+              passageTerminology?:
+                | T
+                | {
+                    singular?:
+                      | T
+                      | {
+                          en?: T;
+                          am?: T;
+                        };
+                    plural?:
+                      | T
+                      | {
+                          en?: T;
+                          am?: T;
+                        };
+                  };
+              numberingPolicy?: T;
+              id?: T;
+            };
+      };
+  updatedAt?: T;
+  createdAt?: T;
+  _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "publication-sections_select".
+ */
+export interface PublicationSectionsSelect<T extends boolean = true> {
+  publication?: T;
+  parent?: T;
+  typeKey?: T;
+  title?: T;
+  slug?: T;
+  introduction?: T;
+  order?: T;
+  number?: T;
+  displayLabel?: T;
+  weekday?: T;
+  depth?: T;
+  ancestors?: T;
+  isPublicationPublished?: T;
+  isAncestorsPublished?: T;
+  isPublishedEffective?: T;
+  isDeleting?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "passages_select".
+ */
+export interface PassagesSelect<T extends boolean = true> {
+  section?: T;
+  publication?: T;
+  order?: T;
+  number?: T;
+  displayLabel?: T;
+  text?:
+    | T
+    | {
+        geez?: T;
+        amharic?: T;
+        english?: T;
+      };
+  notes?:
+    | T
+    | {
+        content?: T;
+        visibility?: T;
+        source?: T;
+        id?: T;
+      };
+  isSectionPublished?: T;
+  isPublicationPublished?: T;
+  isPublishedEffective?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "synaxarium_select".
+ */
+export interface SynaxariumSelect<T extends boolean = true> {
+  title?: T;
+  slug?: T;
+  summary?: T;
+  ethiopianMonth?: T;
+  ethiopianDay?: T;
+  image?: T;
+  readings?:
+    | T
+    | {
+        label?: T;
+        section?: T;
+        id?: T;
+      };
+  order?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  _status?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

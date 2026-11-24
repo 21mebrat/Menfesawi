@@ -20,6 +20,10 @@ import { Files } from './collections/Files'
 import { Books } from './collections/Books'
 import { Teachings } from './collections/Teachings'
 import { SocialDeliveries } from './collections/SocialDeliveries'
+import { Publications } from './collections/Publications'
+import { PublicationSections } from './collections/PublicationSections'
+import { Passages } from './collections/Passages'
+import { Synaxarium } from './collections/Synaxarium'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -109,6 +113,10 @@ export default buildConfig({
     Books,
     Teachings,
     SocialDeliveries,
+    Publications,
+    PublicationSections,
+    Passages,
+    Synaxarium,
   ],
   secret: process.env.PAYLOAD_SECRET || '',
   typescript: {
