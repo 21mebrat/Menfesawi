@@ -327,6 +327,24 @@ export const SocialDeliveries: CollectionConfig = {
         },
 
         {
+            name: 'claimedAt',
+            type: 'date',
+
+            label: {
+                en: 'Claimed at',
+                am: 'የተያዘበት ጊዜ',
+            },
+
+            admin: {
+                readOnly: true,
+                description: {
+                    en: 'Timestamp when this delivery was claimed by a runner for processing.',
+                    am: 'ይህ ስርጭት ለሂደት በአገልጋዩ የተያዘበት ጊዜ።',
+                },
+            },
+        },
+
+        {
             name: 'lastError',
             type: 'textarea',
             maxLength: 2000,

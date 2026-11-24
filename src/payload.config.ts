@@ -19,6 +19,7 @@ import { Categories } from './collections/Categories'
 import { Files } from './collections/Files'
 import { Books } from './collections/Books'
 import { Teachings } from './collections/Teachings'
+import { Hymns } from './collections/Hymns'
 import { SocialDeliveries } from './collections/SocialDeliveries'
 import { Publications } from './collections/Publications'
 import { PublicationSections } from './collections/PublicationSections'
@@ -112,6 +113,7 @@ export default buildConfig({
     Files,
     Books,
     Teachings,
+    Hymns,
     SocialDeliveries,
     Publications,
     PublicationSections,

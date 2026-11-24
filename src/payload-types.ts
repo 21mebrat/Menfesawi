@@ -74,6 +74,7 @@ export interface Config {
     files: File;
     books: Book;
     teachings: Teaching;
+    hymns: Hymn;
     'social-deliveries': SocialDelivery;
     publications: Publication;
     'publication-sections': PublicationSection;
@@ -93,6 +94,7 @@ export interface Config {
     files: FilesSelect<false> | FilesSelect<true>;
     books: BooksSelect<false> | BooksSelect<true>;
     teachings: TeachingsSelect<false> | TeachingsSelect<true>;
+    hymns: HymnsSelect<false> | HymnsSelect<true>;
     'social-deliveries': SocialDeliveriesSelect<false> | SocialDeliveriesSelect<true>;
     publications: PublicationsSelect<false> | PublicationsSelect<true>;
     'publication-sections': PublicationSectionsSelect<false> | PublicationSectionsSelect<true>;
@@ -440,6 +442,90 @@ export interface Teaching {
   _status?: ('draft' | 'published') | null;
 }
 /**
+ * Hymns, chants, and Marian praises with multilingual lyrics and supporting recordings.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "hymns".
+ */
+export interface Hymn {
+  id: string;
+  /**
+   * The title of the hymn in the selected language.
+   */
+  title: string;
+  /**
+   * A stable identifier shared across languages. Avoid changing it after publication.
+   */
+  slug: string;
+  /**
+   * Select whether this is a general hymn or Marian praise.
+   */
+  kind: 'general' | 'marian';
+  /**
+   * Brief overview or liturgical context of the hymn.
+   */
+  summary?: string | null;
+  /**
+   * Hymn lyrics in Ge’ez, Amharic, or English. Line breaks and stanzas are preserved.
+   */
+  lyrics?: {
+    /**
+     * Hymn lyrics in Ge'ez.
+     */
+    geez?: string | null;
+    /**
+     * Hymn lyrics in Amharic.
+     */
+    amharic?: string | null;
+    /**
+     * Hymn lyrics in English.
+     */
+    english?: string | null;
+  };
+  /**
+   * Select categories applicable to hymns.
+   */
+  categories?: (string | Category)[] | null;
+  /**
+   * Credit the author, composer, or traditional source when known (e.g. Saint Yared).
+   */
+  attribution?: string | null;
+  /**
+   * Liturgical sources, hymn books, or citations for this hymn.
+   */
+  sources?:
+    | {
+        /**
+         * A book title, liturgical reference, or citation.
+         */
+        reference: string;
+        /**
+         * Optional HTTPS link to the source citation.
+         */
+        url?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Recordings, videos, and external learning links. Store URLs only; iframe HTML is not accepted.
+   */
+  resources?:
+    | {
+        title: string;
+        type: 'video' | 'link';
+        /**
+         * A YouTube, Telegram, or other supporting HTTPS link. Raw iframe HTML is rejected.
+         */
+        url: string;
+        description?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
+}
+/**
  * System-managed announcement delivery records.
  *
  * This interface was referenced by `Config`'s JSON-Schema
@@ -462,6 +548,10 @@ export interface SocialDelivery {
   platformPostId?: string | null;
   postURL?: string | null;
   sentAt?: string | null;
+  /**
+   * Timestamp when this delivery was claimed by a runner for processing.
+   */
+  claimedAt?: string | null;
   /**
    * A sanitized error summary. Never store tokens or complete provider responses.
    */
@@ -745,6 +835,10 @@ export interface PayloadLockedDocument {
         value: string | Teaching;
       } | null)
     | ({
+        relationTo: 'hymns';
+        value: string | Hymn;
+      } | null)
+    | ({
         relationTo: 'social-deliveries';
         value: string | SocialDelivery;
       } | null)
@@ -969,6 +1063,44 @@ export interface TeachingsSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "hymns_select".
+ */
+export interface HymnsSelect<T extends boolean = true> {
+  title?: T;
+  slug?: T;
+  kind?: T;
+  summary?: T;
+  lyrics?:
+    | T
+    | {
+        geez?: T;
+        amharic?: T;
+        english?: T;
+      };
+  categories?: T;
+  attribution?: T;
+  sources?:
+    | T
+    | {
+        reference?: T;
+        url?: T;
+        id?: T;
+      };
+  resources?:
+    | T
+    | {
+        title?: T;
+        type?: T;
+        url?: T;
+        description?: T;
+        id?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+  _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "social-deliveries_select".
  */
 export interface SocialDeliveriesSelect<T extends boolean = true> {
@@ -981,6 +1113,7 @@ export interface SocialDeliveriesSelect<T extends boolean = true> {
   platformPostId?: T;
   postURL?: T;
   sentAt?: T;
+  claimedAt?: T;
   lastError?: T;
   updatedAt?: T;
   createdAt?: T;
