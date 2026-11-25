@@ -83,6 +83,8 @@ export interface Config {
     passages: Passage;
     synaxarium: SynaxariumEntry;
     'daily-readings': DailyReading;
+    bookmarks: Bookmark;
+    'reading-progress': ReadingProgress;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -106,6 +108,8 @@ export interface Config {
     passages: PassagesSelect<false> | PassagesSelect<true>;
     synaxarium: SynaxariumSelect<false> | SynaxariumSelect<true>;
     'daily-readings': DailyReadingsSelect<false> | DailyReadingsSelect<true>;
+    bookmarks: BookmarksSelect<false> | BookmarksSelect<true>;
+    'reading-progress': ReadingProgressSelect<false> | ReadingProgressSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -868,6 +872,68 @@ export interface DailyReading {
   _status?: ('draft' | 'published') | null;
 }
 /**
+ * Private bookmarks for each account.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "bookmarks".
+ */
+export interface Bookmark {
+  id: string;
+  user: string | User;
+  target:
+    | {
+        relationTo: 'books';
+        value: string | Book;
+      }
+    | {
+        relationTo: 'teachings';
+        value: string | Teaching;
+      }
+    | {
+        relationTo: 'hymns';
+        value: string | Hymn;
+      }
+    | {
+        relationTo: 'publications';
+        value: string | Publication;
+      }
+    | {
+        relationTo: 'publication-sections';
+        value: string | PublicationSection;
+      }
+    | {
+        relationTo: 'passages';
+        value: string | Passage;
+      }
+    | {
+        relationTo: 'synaxarium';
+        value: string | SynaxariumEntry;
+      }
+    | {
+        relationTo: 'daily-readings';
+        value: string | DailyReading;
+      };
+  note?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Private resume positions in structured publications.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "reading-progress".
+ */
+export interface ReadingProgress {
+  id: string;
+  user: string | User;
+  publication: string | Publication;
+  section: string | PublicationSection;
+  passage?: (string | null) | Passage;
+  revision: number;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
@@ -1432,6 +1498,30 @@ export interface DailyReadingsSelect<T extends boolean = true> {
   updatedAt?: T;
   createdAt?: T;
   _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "bookmarks_select".
+ */
+export interface BookmarksSelect<T extends boolean = true> {
+  user?: T;
+  target?: T;
+  note?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "reading-progress_select".
+ */
+export interface ReadingProgressSelect<T extends boolean = true> {
+  user?: T;
+  publication?: T;
+  section?: T;
+  passage?: T;
+  revision?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

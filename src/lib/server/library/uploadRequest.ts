@@ -1,5 +1,8 @@
 import { fail } from './coordination'
-export async function readLimitedBody(request: Request, limit: number) {
+export async function readLimitedBody(
+  request: { headers: Headers; body?: Request['body'] },
+  limit: number,
+) {
   if (Number(request.headers.get('content-length')) > limit)
     return fail('Request exceeds the supported upload size.', 413)
   if (!request.body) return fail('Missing request body.')

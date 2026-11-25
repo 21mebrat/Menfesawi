@@ -1,3 +1,5 @@
+import { removeDeletedUsersProgress } from '../lib/server/reading-progress/service'
+import { removeDeletedUsersBookmarks } from '../lib/server/bookmarks/service'
 import { guardDeletion } from '../lib/server/library/catalog'
 import type { CollectionConfig } from 'payload'
 import { APIError } from 'payload'
@@ -56,6 +58,7 @@ export const Users: CollectionConfig = {
   },
   hooks: {
     beforeDelete: [guardDeletion],
+    afterDelete: [removeDeletedUsersBookmarks, removeDeletedUsersProgress],
     beforeLogin: [
       ({ user }) => {
         const authUser = user as unknown as UserAuth

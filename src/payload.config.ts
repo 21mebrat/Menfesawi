@@ -19,6 +19,8 @@ import { Categories } from './collections/Categories'
 import { Files } from './collections/Files'
 import { BookRatings } from './collections/BookRatings'
 import { BookDeliveries } from './collections/BookDeliveries'
+import { ReadingProgress, ensureReadingProgressIndexes } from './collections/ReadingProgress'
+import { Bookmarks, ensureBookmarkIndexes } from './collections/Bookmarks'
 import { Books } from './collections/Books'
 import { Teachings } from './collections/Teachings'
 import { Hymns } from './collections/Hymns'
@@ -125,6 +127,8 @@ export default buildConfig({
     Passages,
     Synaxarium,
     DailyReadings,
+    Bookmarks,
+    ReadingProgress,
   ],
   secret: process.env.PAYLOAD_SECRET || '',
   typescript: {
@@ -248,6 +252,10 @@ export default buildConfig({
   email: getEmailAdapter(),
   db: mongooseAdapter({
     url: getDatabaseURL(),
+    afterOpenConnection: async (adapter) => {
+      await ensureBookmarkIndexes(adapter)
+      await ensureReadingProgressIndexes(adapter)
+    },
   }),
   sharp,
   plugins: [
