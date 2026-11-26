@@ -1,4 +1,4 @@
-import { test, expect as baseExpect, type Page, type TestInfo } from '@playwright/test'
+import { test, expect as baseExpect, type Locator, type Page, type TestInfo } from '@playwright/test'
 import { login } from '../helpers/login'
 import { seedAdminWorkspace } from '../helpers/seedUser'
 
@@ -701,4 +701,105 @@ test('collection directories share the Users format and preserve native collecti
   await expect(list.getByRole('columnheader', { name: 'ድርጊቶች' })).toBeVisible()
   await page.setViewportSize({ width: 375, height: 780 })
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+})
+
+async function expectDialogToFitHorizontally(panel: Locator) {
+  const overflowing = await panel.evaluate((root) => {
+    const containers = [
+      root,
+      ...root.querySelectorAll<HTMLElement>(
+        '.drawer__content-children, .collection-edit__main-wrapper, .doc-controls__content, .doc-controls__controls, .bulk-upload--file-manager__editView',
+      ),
+    ]
+    return containers
+      .filter((el) => {
+        const { overflowX } = getComputedStyle(el)
+        return ['auto', 'scroll'].includes(overflowX) || el.scrollWidth > el.clientWidth + 1
+      })
+      .map((el) => el.className)
+  })
+  expect(overflowing).toEqual([])
+}
+
+test('relationship create dialogs fit the viewport and keep their native actions visible', async ({
+  page,
+}, info) => {
+  await page.setViewportSize({ width: 1280, height: 800 })
+  await page.emulateMedia({ colorScheme: 'light' })
+  await openDashboard(page, fixtures.admin)
+  await page.goto(base + '/collections/books/' + fixtures.book)
+  const form = page.locator('.collection-edit--books')
+  await expect(form.locator('[data-form-ready="true"]')).toBeVisible()
+  await form.locator('.upload__createNewToggler').first().click()
+  const dialog = page.locator('.doc-drawer.drawer--is-open')
+  const panel = dialog.locator(':scope > .drawer__content')
+  const body = dialog.locator('.collection-edit__main-wrapper')
+  const footer = dialog.locator('.doc-controls')
+  await expect(dialog.locator('#field-alt')).toBeAttached()
+  const bounds = await panel.boundingBox()
+  expect(bounds?.width).toBeCloseTo(1280 * 0.7, 0)
+  expect(bounds?.x).toBeCloseTo((1280 - 1280 * 0.7) / 2, 0)
+  await expect(footer).toBeInViewport({ ratio: 1 })
+  const footerBefore = await footer.boundingBox()
+  expect(
+    await body.evaluate((el) => {
+      el.scrollTop = el.scrollHeight
+      return el.scrollTop
+    }),
+  ).toBeGreaterThan(0)
+  expect(await footer.boundingBox()).toEqual(footerBefore)
+  await expect(dialog.locator('.doc-drawer__header-close')).toBeInViewport()
+  await body.evaluate((el) => {
+    el.scrollTop = 0
+  })
+  await expectDialogToFitHorizontally(panel)
+  await screenshot(page, info, 'create-media-light')
+  await page.setViewportSize({ width: 320, height: 640 })
+  await expectDialogToFitHorizontally(panel)
+  await page.setViewportSize({ width: 1280, height: 800 })
+  await dialog.locator('.doc-drawer__header-close').click()
+  await expect(dialog).toHaveCount(0)
+
+  await page.getByRole('button', { name: 'Switch to dark theme' }).click()
+  await form.locator('#field-categories .relationship-add-new__add-button').click()
+  await expect(dialog.locator('#field-name')).toBeVisible()
+  await screenshot(page, info, 'create-category-dark')
+  await page.setViewportSize({ width: 375, height: 640 })
+  await expect(footer).toBeInViewport({ ratio: 1 })
+  expect(
+    await panel.evaluate(
+      (el) => el.clientWidth >= innerWidth * 0.9 && el.getBoundingClientRect().right <= innerWidth,
+    ),
+  ).toBe(true)
+  const mobilePanel = await panel.boundingBox()
+  const mobileFooter = await footer.boundingBox()
+  if (!mobilePanel || !mobileFooter) throw new Error('Missing mobile dialog bounds')
+  expect(
+    Math.abs(mobilePanel.y + mobilePanel.height - mobileFooter.y - mobileFooter.height),
+  ).toBeLessThan(3)
+  await expectDialogToFitHorizontally(panel)
+  await screenshot(page, info, 'create-category-mobile')
+  const longName = 'Category'.repeat(18)
+  await dialog.locator('#field-name').fill(longName)
+  await expect(dialog.locator('.doc-drawer__header-text')).toContainText(longName)
+  await expectDialogToFitHorizontally(panel)
+  await dialog.locator('.doc-drawer__header-close').click()
+  await page.getByRole('button', { name: 'Leave anyway', exact: true }).click()
+  await expect(dialog).toHaveCount(0)
+  await expect(page).toHaveURL((url) => url.pathname.endsWith('/books/' + fixtures.book))
+})
+
+test('media bulk upload uses the same compact dialog', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 })
+  await openDashboard(page, fixtures.admin)
+  await page.goto(base + '/collections/media')
+  await page.getByRole('button', { name: 'Bulk Upload', exact: true }).click()
+  const dialog = page.locator('.drawer').filter({ has: page.locator('.bulk-upload--add-files') })
+  const panel = dialog.locator(':scope > .drawer__content')
+  await expect(dialog.locator('input[type=file]')).toBeAttached()
+  expect((await panel.boundingBox())?.width).toBeCloseTo(1280 * 0.7, 0)
+  await page.setViewportSize({ width: 320, height: 640 })
+  await expectDialogToFitHorizontally(panel)
+  await dialog.getByRole('button', { name: 'Close', exact: true }).click()
+  await expect(dialog).toHaveCount(0)
 })
