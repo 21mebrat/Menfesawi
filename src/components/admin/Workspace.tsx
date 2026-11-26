@@ -6,6 +6,7 @@ import { WorkspaceTools } from './WorkspaceTools'
 import { workspaceData } from './workspace-data'
 import { navigation } from './navigation'
 import './workspace.css'
+import './directories.css'
 
 type TemplateProps = ServerProps & { req?: PayloadRequest }
 

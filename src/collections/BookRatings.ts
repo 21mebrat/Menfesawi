@@ -1,3 +1,4 @@
+import { statusOptions } from '../i18n/collectionLabels'
 import { createHash } from 'node:crypto'
 import type { CollectionBeforeChangeHook, CollectionConfig } from 'payload'
 import type { BookRating } from '../payload-types'
@@ -122,7 +123,7 @@ export const BookRatings: CollectionConfig = {
       type: 'select',
       required: true,
       defaultValue: 'pending',
-      options: ['pending', 'published', 'hidden'],
+      options: statusOptions('pending', 'published', 'hidden'),
     },
   ],
   timestamps: true,

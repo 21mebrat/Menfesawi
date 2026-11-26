@@ -1,3 +1,5 @@
+import { amWorkspace } from '../i18n/am'
+import { enWorkspace } from '../i18n/en'
 import { removeDeletedUsersProgress } from '../lib/server/reading-progress/service'
 import { removeDeletedUsersBookmarks } from '../lib/server/bookmarks/service'
 import { guardDeletion } from '../lib/server/library/catalog'
@@ -14,26 +16,20 @@ import {
   type UserAuth,
 } from '../access'
 
+function label(key: keyof typeof enWorkspace.usersList) {
+  return { en: enWorkspace.usersList[key], am: amWorkspace.usersList[key] }
+}
+
 export const Users: CollectionConfig = {
   slug: 'users',
-  labels: {
-    singular: {
-      en: 'User',
-      am: 'ተጠቃሚ',
-    },
-    plural: {
-      en: 'Users',
-      am: 'ተጠቃሚዎች',
-    },
-  },
+  labels: { singular: label('singular'), plural: label('title') },
   admin: {
     useAsTitle: 'name',
+    components: { views: { list: { Component: '/components/admin/users/UsersList#UsersList' } } },
+    pagination: { defaultLimit: 4, limits: [4, 10, 25, 50] },
     defaultColumns: ['name', 'email', 'role', 'isActive', 'createdAt'],
     listSearchableFields: ['name', 'email', 'role'],
-    description: {
-      en: 'Who can log in, write articles, and manage the application?',
-      am: 'ወደ መድረኩ መግባት፣ ጽሑፎችን መጻፍ እና መተግበሪያውን ማስተዳደር የሚችሉ ተጠቃሚዎች።',
-    },
+    description: label('description'),
   },
   auth: {
     useSessions: true,
@@ -96,19 +92,10 @@ export const Users: CollectionConfig = {
       name: 'name',
       type: 'text',
       maxLength: 80,
-      label: {
-        en: 'Name',
-        am: 'ስም',
-      },
+      label: label('name'),
       admin: {
-        placeholder: {
-          en: 'e.g. Abebe',
-          am: 'ለምሳሌ፡ አበበ',
-        },
-        description: {
-          en: "The author's given or display name.",
-          am: 'የተጠቃሚው መጠሪያ ስም።',
-        },
+        placeholder: label('nameExample'),
+        description: label('nameHelp'),
         autoComplete: 'name',
       },
       access: {
@@ -118,21 +105,21 @@ export const Users: CollectionConfig = {
     {
       name: 'role',
       type: 'select',
-      label: 'Role',
+      label: label('role'),
       defaultValue: 'member',
       saveToJWT: true,
       index: true,
       options: [
         {
-          label: 'Admin',
+          label: label('admin'),
           value: 'admin',
         },
         {
-          label: 'Editor',
+          label: label('editor'),
           value: 'editor',
         },
         {
-          label: 'Member',
+          label: label('member'),
           value: 'member',
         },
       ],
@@ -144,7 +131,7 @@ export const Users: CollectionConfig = {
     {
       name: 'avatarURL',
       type: 'text',
-      label: 'Avatar URL',
+      label: label('avatarURL'),
       access: {
         update: isAdminOrSelfFieldAccess,
       },
@@ -152,7 +139,7 @@ export const Users: CollectionConfig = {
     {
       name: 'isActive',
       type: 'checkbox',
-      label: 'Active',
+      label: label('active'),
       defaultValue: true,
       access: {
         create: isAdminFieldAccess,
@@ -161,11 +148,12 @@ export const Users: CollectionConfig = {
     },
     {
       name: 'hasPassword',
+      label: label('hasPassword'),
       type: 'checkbox',
       admin: {
         readOnly: true,
         position: 'sidebar',
-        description: 'Whether this account has an active usable password known to the user.',
+        description: label('passwordHelp'),
       },
       access: {
         create: () => false,
@@ -178,16 +166,10 @@ export const Users: CollectionConfig = {
       relationTo: 'media',
       localized: false,
 
-      label: {
-        en: 'Profile picture',
-        am: 'የመገለጫ ፎቶ',
-      },
+      label: label('avatar'),
 
       admin: {
-        description: {
-          en: 'Your uploaded profile picture. Displayed instead of your Google profile picture when selected.',
-          am: 'የሰቀሉት የመገለጫ ፎቶ። ሲመረጥ በGoogle መገለጫ ፎቶዎ ፋንታ ይታያል።',
-        },
+        description: label('avatarHelp'),
       },
 
       access: {

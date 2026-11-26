@@ -1,7 +1,7 @@
 import { mongooseAdapter } from '@payloadcms/db-mongodb'
 import { BlocksFeature, FixedToolbarFeature, lexicalEditor, UploadFeature } from '@payloadcms/richtext-lexical'
 import path from 'path'
-import { buildConfig } from 'payload'
+import { buildConfig, type CollectionConfig } from 'payload'
 import { deepMergeSimple } from 'payload/shared'
 import { fileURLToPath } from 'url'
 import sharp from 'sharp'
@@ -78,6 +78,24 @@ export const getDatabaseURL = (): string => {
   return process.env.DATABASE_URL || ''
 }
 
+function withDirectory(collection: CollectionConfig): CollectionConfig {
+  const admin = collection.admin
+  if (admin?.hidden === true || admin?.components?.views?.list?.Component) return collection
+  return {
+    ...collection,
+    admin: {
+      ...admin,
+      components: {
+        ...admin?.components,
+        views: {
+          ...admin?.components?.views,
+          list: { ...admin?.components?.views?.list, Component: '/components/admin/CollectionDirectory#CollectionDirectory' },
+        },
+      },
+    },
+  }
+}
+
 export default buildConfig({
   admin: {
     user: Users.slug,
@@ -115,7 +133,7 @@ export default buildConfig({
     DailyReadings,
     Bookmarks,
     ReadingProgress,
-  ],
+  ].map(withDirectory),
   secret: process.env.PAYLOAD_SECRET || '',
   typescript: {
     outputFile: path.resolve(dirname, 'payload-types.ts'),

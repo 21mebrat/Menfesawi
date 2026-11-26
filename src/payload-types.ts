@@ -150,7 +150,7 @@ export interface UserAuthOperations {
   };
 }
 /**
- * Who can log in, write articles, and manage the application?
+ * Manage account access and profiles.
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "users".

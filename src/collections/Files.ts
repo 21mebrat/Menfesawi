@@ -1,3 +1,4 @@
+import { statusOptions } from '../i18n/collectionLabels'
 import { guardDeletion } from '../lib/server/library/catalog'
 import type { CollectionConfig } from 'payload'
 
@@ -73,7 +74,7 @@ export const Files: CollectionConfig = {
             name: 'ingestionStatus',
             type: 'select',
             label: { en: 'Upload status', am: 'የሰቀላ ሁኔታ' },
-            options: ['pending', 'ready', 'failed'],
+            options: statusOptions('pending', 'ready', 'failed'),
             access: { update: () => false },
             admin: { readOnly: true },
         },
@@ -81,7 +82,7 @@ export const Files: CollectionConfig = {
             name: 'ingestionFailure',
             type: 'select',
             label: { en: 'Upload outcome', am: 'የሰቀላ ውጤት' },
-            options: ['rejected', 'uncertain'],
+            options: statusOptions('rejected', 'uncertain'),
             access: { update: () => false },
             admin: { readOnly: true },
         },

@@ -1,3 +1,5 @@
+import { UsersList as UsersList_e829368e269fc7147fa7de3a207aa376 } from '../../../components/admin/users/UsersList'
+import { CollectionDirectory as CollectionDirectory_fbfe826353fabde402d79e8237e1f6d6 } from '../../../components/admin/CollectionDirectory'
 import { BookUpload as BookUpload_6f9c99f1fc1d7f66f9ab3622cee8821f } from '../../../components/BookUpload'
 import { ReloadBookReview as ReloadBookReview_1fb8fc42419c5e5f1c341ca63ecb1cbc } from '../../../components/ReloadBookReview'
 import { RscEntryLexicalCell as RscEntryLexicalCell_44fe37237e0ebf4470c9990d8cb7b07e } from '@payloadcms/richtext-lexical/rsc'
@@ -35,6 +37,8 @@ import { CollectionCards as CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1 } f
 
 /** @type import('payload').ImportMap */
 export const importMap = {
+  "/components/admin/users/UsersList#UsersList": UsersList_e829368e269fc7147fa7de3a207aa376,
+  "/components/admin/CollectionDirectory#CollectionDirectory": CollectionDirectory_fbfe826353fabde402d79e8237e1f6d6,
   "/components/BookUpload#BookUpload": BookUpload_6f9c99f1fc1d7f66f9ab3622cee8821f,
   "/components/ReloadBookReview#ReloadBookReview": ReloadBookReview_1fb8fc42419c5e5f1c341ca63ecb1cbc,
   "@payloadcms/richtext-lexical/rsc#RscEntryLexicalCell": RscEntryLexicalCell_44fe37237e0ebf4470c9990d8cb7b07e,

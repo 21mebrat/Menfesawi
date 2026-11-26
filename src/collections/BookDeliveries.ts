@@ -1,3 +1,4 @@
+import { statusOptions } from '../i18n/collectionLabels'
 import type { CollectionConfig } from 'payload'
 import { isAdmin } from '../access'
 
@@ -59,7 +60,7 @@ export const BookDeliveries: CollectionConfig = {
       name: 'state',
       label: { en: 'Delivery status', am: 'የርክክብ ሁኔታ' },
       type: 'select',
-      options: ['pending', 'sent', 'failed', 'uncertain'],
+      options: statusOptions('pending', 'sent', 'failed', 'uncertain'),
       required: true,
     },
     {

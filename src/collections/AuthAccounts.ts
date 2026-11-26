@@ -1,8 +1,18 @@
+import { directoryLabel } from '../i18n/collectionLabels'
+import { enWorkspace } from '../i18n/en'
+import { amWorkspace } from '../i18n/am'
 import type { CollectionConfig } from 'payload'
 import { isAuthenticated, isAdmin, canAccessAdmin, type UserAuth } from '../access'
 
 export const AuthAccounts: CollectionConfig = {
   slug: 'auth-accounts',
+  labels: {
+    singular: directoryLabel('authAccount'),
+    plural: {
+      en: enWorkspace.workspaceNav.authAccounts,
+      am: amWorkspace.workspaceNav.authAccounts,
+    },
+  },
   admin: {
     useAsTitle: 'providerAccountId',
     defaultColumns: ['provider', 'providerAccountId', 'user', 'createdAt'],
@@ -37,6 +47,7 @@ export const AuthAccounts: CollectionConfig = {
   fields: [
     {
       name: 'user',
+      label: directoryLabel('account'),
       type: 'relationship',
       relationTo: 'users',
       required: true,
@@ -45,6 +56,7 @@ export const AuthAccounts: CollectionConfig = {
     },
     {
       name: 'provider',
+      label: directoryLabel('provider'),
       type: 'select',
       required: true,
       options: [
@@ -64,12 +76,14 @@ export const AuthAccounts: CollectionConfig = {
     },
     {
       name: 'providerAccountId',
+      label: directoryLabel('providerId'),
       type: 'text',
       required: true,
       index: true,
     },
     {
       name: 'issuer',
+      label: directoryLabel('issuer'),
       type: 'text',
       defaultValue: 'https://accounts.google.com',
     },

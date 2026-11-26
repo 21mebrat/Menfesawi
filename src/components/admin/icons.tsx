@@ -24,7 +24,18 @@ import Star from '@hugeicons/core-free-icons/StarIcon'
 import Sun03 from '@hugeicons/core-free-icons/Sun03Icon'
 import UserGroup from '@hugeicons/core-free-icons/UserGroupIcon'
 
+import PencilEdit from '@hugeicons/core-free-icons/PencilEdit01Icon'
+import MoreVertical from '@hugeicons/core-free-icons/MoreVerticalIcon'
+import ArrowLeft from '@hugeicons/core-free-icons/ArrowLeft01Icon'
+import FirstPage from '@hugeicons/core-free-icons/ArrowLeftDoubleIcon'
+import LastPage from '@hugeicons/core-free-icons/ArrowRightDoubleIcon'
+
 const icons: Record<string, typeof BookOpen02> = {
+  edit: PencilEdit,
+  more: MoreVertical,
+  prev: ArrowLeft,
+  first: FirstPage,
+  last: LastPage,
   books: BookOpen02,
   search: Search01,
   bell: Notification02,

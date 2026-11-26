@@ -255,6 +255,7 @@ test('native collection editors, breadcrumbs, relationships, PDF upload and revi
 }) => {
   await openDashboard(page, fixtures.admin)
   const nav = page.getByRole('navigation', { name: 'Admin navigation' })
+  await expect(page.locator('.mf-desktop')).toHaveAttribute('aria-busy', 'false')
   await nav.getByRole('link', { name: 'Books', exact: true }).click()
   await expect(page.getByRole('heading', { name: 'Books', exact: true })).toBeVisible()
   await page.getByText('Workspace test book', { exact: true }).first().click()
@@ -514,7 +515,7 @@ test('overflow opens the native list with the same field filter and content loca
     const found: string[] = []
     for (const size of [10, 3]) {
       await expect(list.locator('tbody tr')).toHaveCount(size)
-      const titles = list.getByRole('link', { name: new RegExp(term) })
+      const titles = list.locator('.cell-title').getByRole('link', { name: new RegExp(term) })
       await expect(titles).toHaveCount(size)
       found.push(
         ...(await titles.evaluateAll((links) =>
@@ -534,4 +535,170 @@ test('overflow opens the native list with the same field filter and content loca
   } finally {
     for (const id of ids) expect((await page.request.delete('/api/books/' + id)).ok()).toBe(true)
   }
+})
+
+test('users directory filters, pages, actions and Amharic labels respect account permissions', async ({
+  page,
+}, info) => {
+  await openDashboard(page, fixtures.admin)
+  const ids = new Set<string>()
+  const emails: string[] = []
+  const prefix = `Directory ${crypto.randomUUID().slice(0, 8)}`
+  const context = page.context()
+  try {
+    for (let n = 0; n < 5; n++) {
+      const email = `directory-${crypto.randomUUID()}@example.test`
+      emails.push(email)
+      const response = await context.request.post('/api/users', {
+        data: {
+          name: `${prefix} ${n}`,
+          email,
+          password: crypto.randomUUID(),
+          role: 'member',
+          isActive: n !== 0,
+        },
+      })
+      expect(response.ok()).toBe(true)
+      ids.add((await response.json()).doc.id)
+    }
+    await page.goto(base + '/collections/users')
+    const list = page.locator('.mu-list')
+    const rows = list.locator('tbody tr')
+    await expect(list.getByRole('link', { name: 'Create user' })).toHaveAttribute(
+      'href',
+      /\/users\/create$/,
+    )
+    await list.getByRole('searchbox', { name: 'Search by name…' }).fill(prefix)
+    await expect(list).toContainText('5 users')
+    await expect(rows).toHaveCount(4)
+    await list.getByRole('combobox', { name: 'Sort users' }).selectOption('name')
+    await expect(rows.first()).toContainText(`${prefix} 0`)
+    await list.getByRole('searchbox', { name: 'Search by email…' }).fill(emails[4])
+    await expect(rows).toHaveCount(1)
+    await expect(rows.first()).toContainText(emails[4])
+    await list.getByRole('searchbox', { name: 'Search by email…' }).fill('')
+    await expect(rows).toHaveCount(4)
+    await screenshot(page, info, 'users-en')
+    await page.getByRole('button', { name: 'Switch to dark theme' }).click()
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
+    await screenshot(page, info, 'users-dark')
+    await list.getByRole('button', { name: 'Next page', exact: true }).click()
+    await expect(rows).toHaveCount(1)
+    await list.getByRole('combobox', { name: 'Status', exact: true }).selectOption('false')
+    await expect(rows).toHaveCount(1)
+    await expect(rows.first()).toContainText(`${prefix} 0`)
+    await list.getByRole('combobox', { name: 'Role', exact: true }).selectOption('admin')
+    await expect(list.getByRole('status')).toHaveText('No users match these filters.')
+    await list.getByRole('combobox', { name: 'Role', exact: true }).selectOption('member')
+    await expect(rows).toHaveCount(1)
+    await list.getByRole('button', { name: 'Columns', exact: true }).click()
+    await page.getByRole('menuitemcheckbox', { name: 'Email', exact: true }).click()
+    await page.keyboard.press('Escape')
+    await expect(list.getByRole('columnheader', { name: 'Email', exact: true })).toHaveCount(0)
+    await list.getByRole('button', { name: `Actions for ${prefix} 0` }).click()
+    await page.getByRole('menuitem', { name: 'Delete user' }).click()
+    await expect(page.getByText(`Permanently delete the account for ${prefix} 0?`)).toBeVisible()
+    await page.getByRole('button', { name: 'Cancel', exact: true }).click()
+    await expect(rows).toHaveCount(1)
+    await page.getByRole('combobox', { name: 'Interface language' }).selectOption('am')
+    await expect(list.getByRole('heading', { name: 'ተጠቃሚዎች' })).toBeVisible()
+    await expect(list.getByRole('searchbox', { name: 'በኢሜይል ይፈልጉ…' })).toBeVisible()
+    await expect(rows.first()).toContainText('የቦዘነ')
+    await screenshot(page, info, 'users-am')
+    await page.setViewportSize({ width: 375, height: 780 })
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+    await page.getByRole('combobox', { name: 'የበይነገጽ ቋንቋ' }).selectOption('en')
+    await expect(list.getByRole('heading', { name: 'Users' })).toBeVisible()
+    await list.getByRole('button', { name: `Actions for ${prefix} 0` }).click()
+    await page.getByRole('menuitem', { name: 'Delete user' }).click()
+    const deleted = page.waitForResponse(
+      (response) =>
+        response.request().method() === 'DELETE' && response.url().includes('/api/users/'),
+    )
+    await page.getByRole('button', { name: 'Delete user', exact: true }).click()
+    const response = await deleted
+    expect(response.ok()).toBe(true)
+    ids.delete(new URL(response.url()).pathname.split('/').pop()!)
+    await expect(rows).toHaveCount(0)
+  } finally {
+    for (const id of ids) expect((await context.request.delete('/api/users/' + id)).ok()).toBe(true)
+  }
+  await openDashboard(page, fixtures.editor)
+  await page.goto(base + '/collections/users')
+  const list = page.locator('.mu-list')
+  await expect(list.locator('tbody tr')).toHaveCount(1)
+  await expect(list).toContainText(fixtures.editor.email)
+  await expect(list.getByRole('link', { name: 'Create user' })).toHaveCount(0)
+  const actions = list.getByRole('button', { name: 'Actions for Dawit' })
+  await expect(actions).toBeEnabled()
+  await actions.focus()
+  await actions.press('Enter')
+  await expect(page.getByRole('menuitem', { name: 'View details' })).toBeVisible()
+  await expect(page.getByRole('menuitem', { name: 'Delete user' })).toHaveCount(0)
+  await page.getByRole('menuitem', { name: 'View details' }).click()
+  await expect(page).toHaveURL((url) => url.pathname.endsWith('/users/' + fixtures.editor.id))
+})
+
+test('collection directories share the Users format and preserve native collection actions', async ({
+  page,
+}, info) => {
+  await openDashboard(page, fixtures.admin)
+  const list = page.locator('.md-directory')
+  for (const slug of [
+    'categories',
+    'teachings',
+    'hymns',
+    'media',
+    'files',
+    'publications',
+    'publication-sections',
+    'passages',
+    'synaxarium',
+    'daily-readings',
+    'auth-accounts',
+    'social-deliveries',
+    'book-deliveries',
+    'book-ratings',
+    'books',
+  ]) {
+    await page.goto(base + '/collections/' + slug)
+    await expect(list.getByRole('heading', { level: 1 })).toBeVisible()
+    await expect(list.getByLabel('Sort records')).toBeVisible()
+    await expect(list.locator('#toggle-list-columns')).toBeVisible()
+    if (
+      ['files', 'book-ratings', 'social-deliveries', 'book-deliveries', 'auth-accounts'].includes(
+        slug,
+      )
+    ) {
+      await expect(list.locator('a[href$="/create"]')).toHaveCount(0)
+    }
+    if (slug === 'files') await expect(list.getByLabel('Book PDF (up to 4 MB)')).toBeVisible()
+  }
+  const row = list.locator('tr[data-id="' + fixtures.book + '"]')
+  await expect(row).toBeVisible()
+  await list.getByLabel('Sort records').selectOption('createdAt')
+  await expect(page).toHaveURL((url) => url.searchParams.get('sort') === 'createdAt')
+  await list.getByLabel('Status', { exact: true }).selectOption('published')
+  await expect(row).toHaveCount(0)
+  await list.getByLabel('Status', { exact: true }).selectOption('draft')
+  await expect(row).toBeVisible()
+  await row.getByRole('button', { name: /Actions for/ }).click()
+  await page.getByRole('menuitem', { name: 'Open in drawer' }).click()
+  const drawer = page.locator('.doc-drawer.drawer--is-open')
+  // The drawer follows the account's content locale. The slug identifies the same book in both languages.
+  const book = await page.request.get('/api/books/' + fixtures.book + '?draft=true&depth=0')
+  expect(book.ok()).toBe(true)
+  const { slug } = await book.json()
+  expect(typeof slug).toBe('string')
+  await expect(drawer.locator('#field-slug')).toHaveValue(slug)
+  await drawer.getByRole('button', { name: 'Close', exact: true }).last().click()
+  await expect(drawer).toBeHidden()
+  await page.getByRole('button', { name: 'Switch to dark theme' }).click()
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
+  await screenshot(page, info, 'books-directory-dark')
+  await page.getByRole('combobox', { name: 'Interface language' }).selectOption('am')
+  await expect(list.getByLabel('የመዝገቦች ቅደም ተከተል')).toBeVisible()
+  await expect(list.getByRole('columnheader', { name: 'ድርጊቶች' })).toBeVisible()
+  await page.setViewportSize({ width: 375, height: 780 })
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
 })
