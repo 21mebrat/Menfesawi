@@ -25,6 +25,12 @@ import { StrikethroughFeatureClient as StrikethroughFeatureClient_e70f5e05f09f93
 import { UnderlineFeatureClient as UnderlineFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
 import { BoldFeatureClient as BoldFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
 import { ItalicFeatureClient as ItalicFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
+import { WorkspaceAvatar as WorkspaceAvatar_b37f98f9249403a6b7f1caa8670539db } from '../../../components/admin/Workspace'
+import { AdminNav as AdminNav_b37f98f9249403a6b7f1caa8670539db } from '../../../components/admin/Workspace'
+import { BrandIcon as BrandIcon_8cc48bfb0097012b84282a716ad46c70 } from '../../../components/BrandLogo'
+import { BrandLogo as BrandLogo_8cc48bfb0097012b84282a716ad46c70 } from '../../../components/BrandLogo'
+import { HeaderActions as HeaderActions_b37f98f9249403a6b7f1caa8670539db } from '../../../components/admin/Workspace'
+import { Dashboard as Dashboard_b37f98f9249403a6b7f1caa8670539db } from '../../../components/admin/Workspace'
 import { CollectionCards as CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1 } from '@payloadcms/next/rsc'
 
 /** @type import('payload').ImportMap */
@@ -56,5 +62,11 @@ export const importMap = {
   "@payloadcms/richtext-lexical/client#UnderlineFeatureClient": UnderlineFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
   "@payloadcms/richtext-lexical/client#BoldFeatureClient": BoldFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
   "@payloadcms/richtext-lexical/client#ItalicFeatureClient": ItalicFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
+  "/components/admin/Workspace#WorkspaceAvatar": WorkspaceAvatar_b37f98f9249403a6b7f1caa8670539db,
+  "/components/admin/Workspace#AdminNav": AdminNav_b37f98f9249403a6b7f1caa8670539db,
+  "/components/BrandLogo#BrandIcon": BrandIcon_8cc48bfb0097012b84282a716ad46c70,
+  "/components/BrandLogo#BrandLogo": BrandLogo_8cc48bfb0097012b84282a716ad46c70,
+  "/components/admin/Workspace#HeaderActions": HeaderActions_b37f98f9249403a6b7f1caa8670539db,
+  "/components/admin/Workspace#Dashboard": Dashboard_b37f98f9249403a6b7f1caa8670539db,
   "@payloadcms/next/rsc#CollectionCards": CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1
 }

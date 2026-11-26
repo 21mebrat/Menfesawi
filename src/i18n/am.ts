@@ -1,14 +1,20 @@
+import type { enWorkspace } from './en'
 import { enTranslations } from '@payloadcms/translations/languages/en'
-import type { DefaultTranslationsObject, Language } from '@payloadcms/translations'
+import type { Language } from '@payloadcms/translations'
 
-export const amTranslations: DefaultTranslationsObject = {
+export const amTranslations = {
   ...enTranslations,
   general: {
     ...enTranslations.general,
-    thisLanguage: 'አማርኛ (Amharic)',
+    thisLanguage: 'አማርኛ',
     dashboard: 'ዳሽቦርድ',
+    language: 'ቋንቋ',
+    locale: 'የይዘት ቋንቋ',
+    menu: 'ምናሌ',
+    untitled: 'ርዕስ የሌለው',
     collections: 'ስብስቦች',
     globals: 'አጠቃላይ ቅንብሮች',
+    createNewLabel: '{{label}} ፍጠር',
     createNew: 'አዲስ ፍጠር',
     create: 'ፍጠር',
     creating: 'በመፍጠር ላይ...',
@@ -73,75 +79,190 @@ export const amTranslations: DefaultTranslationsObject = {
   },
   fields: {
     ...enTranslations.fields,
+    chooseBetweenCustomTextOrDocument: 'የድር አድራሻ ያስገቡ ወይም ሌላ ሰነድ ያገናኙ።',
+    chooseDocumentToLink: 'የሚያገናኙትን ሰነድ ይምረጡ',
+    customURL: 'የድር አድራሻ',
+    editLink: 'አገናኙን ያርትዑ',
+    enterURL: 'የድር አድራሻ ያስገቡ',
+    internalLink: 'የውስጥ አገናኝ',
+    linkedTo: 'ከ<0>{{label}}</0> ጋር ተገናኝቷል',
+    linkType: 'የአገናኝ ዓይነት',
+    openInNewTab: 'በአዲስ ትር ክፈት',
+    textToDisplay: 'የሚታይ ጽሑፍ',
     addLabel: 'አዲስ {{label}} አክል',
     addNew: 'አዲስ አክል',
     chooseFromExisting: 'ካሉት ምረጥ',
     uploadNewLabel: 'አዲስ ስቀል',
+  },
+  version: {
+    ...enTranslations.version,
+    draft: 'ረቂቅ',
+    published: 'የታተመ',
+    saveDraft: 'ረቂቁን አስቀምጥ',
+    publishChanges: 'ለውጦቹን አትም',
   },
   localization: {
     ...enTranslations.localization,
     selectLocaleToCopy: 'ለመገልበጥ ቋንቋ ይምረጡ',
     selectedLocales: 'የተመረጡ ቋንቋዎች',
   },
-  lexical: {
-    checklist: {
-      label: 'Checklist',
-    },
-    heading: {
-      label: 'ርዕስ {{headingLevel}}',
-    },
-    paragraph: {
-      label: 'አንቀጽ',
-      label2: 'መደበኛ ጽሑፍ',
-    },
-    blockquote: {
-      label: 'ጥቅስ (Quote)',
-    },
-    orderedList: {
-      label: 'ቁጥር ያለው ዝርዝር (Ordered List)',
-    },
-    unorderedList: {
-      label: 'ነጥብ ያለው ዝርዝር (Unordered List)',
-    },
-    upload: {
-      label: 'ፋይል ስቀል (Upload)',
-    },
-    relationship: {
-      label: 'ዝምድና (Relationship)',
-    },
-    link: {
-      label: 'አገናኝ (Link)',
-      loadingWithEllipsis: 'በመጫን ላይ...',
-    },
-    horizontalRule: {
-      label: 'አግድም መስመር (Divider)',
-    },
-    blocks: {
-      label: 'ብሎኮች (Blocks)',
-      inlineBlocks: {
-        label: 'የመስመር ውስጥ ብሎኮች',
-      },
-    },
-    align: {
-      alignLeftLabel: 'ወደ ግራ አሰልፍ',
-      alignCenterLabel: 'መሃል አሰልፍ',
-      alignRightLabel: 'ወደ ቀኝ አሰልፍ',
-      alignJustifyLabel: 'እኩል አሰልፍ',
-    },
-    indent: {
-      decreaseLabel: 'ወደ ውጭ አውጣ',
-      increaseLabel: 'ወደ ውስጥ አስገባ',
-    },
-    general: {
-      placeholder: "መጻፍ ይጀምሩ፣ ወይም ለትዕዛዞች '/' ይጫኑ...",
-      slashMenuBasicGroupLabel: 'መሰረታዊ (Basic)',
-      slashMenuListGroupLabel: 'ዝርዝሮች (Lists)',
-      toolbarItemsActive: '{{count}} ንቁ',
-    },
-  },
-} as any
+}
 
 export const am: Language = {
   dateFNSKey: 'en-US',
   translations: amTranslations,
 }
+
+export const amWorkspace: typeof enWorkspace = {
+  general: { locale: amTranslations.general.locale },
+  workspaceNav: {
+    interfaceLanguage: 'የበይነገጽ ቋንቋ',
+    administration: 'አስተዳደር',
+    authAccounts: 'የመግቢያ መለያዎች',
+    navigation: 'የአስተዳደር ምናሌ',
+    adminWorkspace: 'የአስተዳደር ሥራ ቦታ',
+    overview: 'አጠቃላይ እይታ',
+    workspace: 'የሥራ ቦታ',
+    settings: 'ቅንብሮች',
+    footerTitle: 'የሕትመት ሥራ ቦታ',
+    footerText: 'ቤተ መጻሕፍትዎንና የአዘጋጆች ቡድንዎን ያስተዳድሩ።',
+    light: 'ወደ ብሩህ ገጽታ ቀይር',
+    dark: 'ወደ ጨለማ ገጽታ ቀይር',
+    library: 'ቤተ መጻሕፍት',
+    teachings: 'ትምህርቶችና መዝሙሮች',
+    sacred: 'ቅዱሳት ጽሑፋት',
+    calendar: 'የቀን መቁጠሪያና መታሰቢያዎች',
+    resources: 'ሚዲያና ተዛማጅ ሀብቶች',
+    delivery: 'ሕትመትና ስርጭት',
+  },
+  workspaceMetrics: {
+    breadcrumb: 'የሥራ ቦታ / አጠቃላይ እይታ',
+    intro: 'የሕትመት ሥራዎን በአጭሩ ይመልከቱ።',
+    period: 'የይዘት ፈጠራ ጊዜ',
+    updated: 'የተዘመነበት',
+    distribution: 'የይዘት ስርጭት',
+    byCollection: 'የአሁኑ ይዘት · {{sources}}',
+    items: 'ይዘቶች',
+    recent: 'የቅርብ ጊዜ ይዘት',
+    recentDescription: 'የቅርብ ጊዜ ለውጦች · {{sources}}',
+    content: 'ይዘት',
+    collection: 'ስብስብ',
+    status: 'ሁኔታ',
+    empty: 'እስካሁን ይዘት የለም።',
+    quick: 'ፈጣን ተግባራት',
+    shortcuts: 'የሕትመት አቋራጮች',
+    add: 'ይዘት ያክሉ',
+    upload: 'ፋይል ይጫኑ',
+    teach: 'አዲስ ትምህርት',
+    createdTotal: 'አዲስ መዝገቦች',
+    created: 'አዲስ ይዘት',
+    chartLabel: 'በየቀኑ የተፈጠረ ይዘት',
+    creation: 'የይዘት ፈጠራ',
+    scope: '{{sources}} · UTC · ዛሬ እስከ አሁን',
+    noSources: 'ከሚከታተሏቸው የይዘት ስብስቦች ውስጥ የሚገኝ የለም።',
+    range: 'ያለፉት {{days}} ቀናት',
+    growth: 'ባለፉት {{days}} ቀናት +{{amount}}',
+    snapshot: 'የውሂብ ማጠቃለያ',
+    loaded: 'የተጫነበት {{time}} UTC',
+    dailyValues: 'ዕለታዊ የይዘት ፈጠራ ብዛት (UTC)',
+    date: 'ቀን',
+    count: 'ብዛት',
+  },
+  workspaceSearch: {
+    title: 'የሥራ ቦታዎን ይፈልጉ',
+    trigger: 'ይዘት፣ ስብስቦች ይፈልጉ…',
+    placeholder: 'ይፈልጉ…',
+    results: 'የይዘት ውጤቶች',
+    empty: 'ውጤት አልተገኘም።',
+    description: 'መጻሕፍት፣ ትምህርቶች፣ ሚዲያ፣ ፋይሎች ወይም ስብስቦች ይፈልጉ።',
+    notices: 'የሥራ ቦታ ማስታወቂያዎች',
+    latest: 'የቅርብ ጊዜ የይዘት ለውጦች',
+    failed: '{{sources}}ን መጫን አልተቻለም።',
+    denied: 'ለ{{sources}} የመዳረሻ ፈቃድ የለዎትም።',
+    expired: 'የመግቢያ ጊዜዎ አልፏል። ዳግም ይግቡ።',
+    retry: 'ዳግም ሞክር',
+    more: 'በእነዚህ ስብስቦች ተጨማሪ ውጤቶች አሉ።',
+  },
+  workspaceEditors: {
+    conflict: 'ዳግም ከመሞከርዎ በፊት የፋይሉን መዝገብ ያረጋግጡ።',
+    restricted: 'ፋይል ለመጫን የንቁ ሠራተኛ ፈቃድ ያስፈልጋል።',
+    badPDF: 'ትክክለኛ ፒዲኤፍ ይምረጡና የፋይሉን ስም ያረጋግጡ።',
+    size: 'ከ4 MB በላይ ለሆነ ፋይል CLI ይጠቀሙ።',
+    check: 'የፋይሉን ሁኔታ ያረጋግጡ።',
+    pdf: 'የመጽሐፍ ፒዲኤፍ (4 MB)',
+    send: 'ወደ Telegram ላክ',
+    reloadReview: 'የአሁኑን አስተያየት ዳግም ጫን',
+    uploadFailed: 'ፋይሉ አልተጫነም',
+  },
+  workspaceStatus: {
+    published: 'የታተመ',
+    draft: 'ረቂቅ',
+    uploaded: 'የተጫነ',
+    ready: 'ዝግጁ',
+    pending: 'በመጠባበቅ ላይ',
+    failed: 'አልተሳካም',
+    unavailable: 'አይገኝም',
+  },
+}
+
+export const amLexical = {
+  checklist: {
+    label: 'የማረጋገጫ ዝርዝር',
+  },
+  heading: {
+    label: 'ርዕስ {{headingLevel}}',
+  },
+  paragraph: {
+    label: 'አንቀጽ',
+    label2: 'መደበኛ ጽሑፍ',
+  },
+  blockquote: {
+    label: 'ጥቅስ',
+  },
+  orderedList: {
+    label: 'ቁጥር ያለው ዝርዝር',
+  },
+  unorderedList: {
+    label: 'ነጥብ ያለው ዝርዝር',
+  },
+  upload: {
+    label: 'ፋይል ስቀል',
+  },
+  relationship: {
+    label: 'ዝምድና',
+  },
+  link: {
+    label: 'አገናኝ',
+    loadingWithEllipsis: 'በመጫን ላይ...',
+  },
+  horizontalRule: {
+    label: 'አግድም መስመር',
+  },
+  blocks: {
+    label: 'ብሎኮች',
+    inlineBlocks: {
+      label: 'የመስመር ውስጥ ብሎኮች',
+      create: '{{label}} ፍጠር',
+      edit: '{{label}} አርትዕ',
+      remove: '{{label}} አስወግድ',
+    },
+  },
+  align: {
+    alignLeftLabel: 'ወደ ግራ አሰልፍ',
+    alignCenterLabel: 'መሃል አሰልፍ',
+    alignRightLabel: 'ወደ ቀኝ አሰልፍ',
+    alignJustifyLabel: 'እኩል አሰልፍ',
+  },
+  indent: {
+    decreaseLabel: 'ወደ ውጭ አውጣ',
+    increaseLabel: 'ወደ ውስጥ አስገባ',
+  },
+  general: {
+    placeholder: "መጻፍ ይጀምሩ፣ ወይም ለትዕዛዞች '/' ይጫኑ...",
+    slashMenuBasicGroupLabel: 'መሰረታዊ',
+    slashMenuListGroupLabel: 'ዝርዝሮች',
+    toolbarItemsActive: '{{count}} ንቁ',
+  },
+}
+
+export const amLocaleNames = { en: 'እንግሊዝኛ', am: 'አማርኛ' }

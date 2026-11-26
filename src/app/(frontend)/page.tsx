@@ -1,3 +1,4 @@
+import { BrandLogo } from '@/components/BrandLogo'
 import React from 'react'
 import { headers as getHeaders } from 'next/headers'
 import Link from 'next/link'
@@ -15,6 +16,7 @@ export default async function HomePage() {
   return (
     <div className="mx-auto max-w-4xl px-4 py-16">
       <div className="text-center space-y-4">
+        <div className="flex justify-center"><BrandLogo size={64} decorative /></div>
         <h1 className="font-heading text-4xl font-bold tracking-tight text-foreground sm:text-5xl">
           መንፈሳዊ (Menfesawi)
         </h1>

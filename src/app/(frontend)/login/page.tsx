@@ -1,3 +1,4 @@
+import { BrandLogo } from '@/components/BrandLogo'
 import React from 'react'
 import Link from 'next/link'
 import LoginForm from './login-form'
@@ -43,7 +44,8 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
     <div className="flex min-h-[calc(100vh-8rem)] items-center justify-center p-4">
       <Card className="w-full max-w-md shadow-lg border-border">
         <CardHeader className="text-center space-y-1">
-          <CardTitle className="text-2xl font-semibold tracking-tight text-foreground">
+          <CardTitle className="flex items-center justify-center gap-2 text-2xl font-semibold tracking-tight text-foreground">
+            <BrandLogo size={32} decorative />
             Menfesawi
           </CardTitle>
           <CardDescription className="text-sm text-muted-foreground">

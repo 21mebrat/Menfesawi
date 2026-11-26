@@ -1,6 +1,9 @@
+import path from 'node:path'
+
 const config = {
   plugins: {
-    "@tailwindcss/postcss": {},
+    [path.resolve('scripts/admin-tokens.cjs')]: {},
+    '@tailwindcss/postcss': {},
   },
 }
 

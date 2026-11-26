@@ -1,12 +1,13 @@
 'use client'
+import { useAdminTranslation } from '@/i18n/useAdminTranslation'
 
-import { Button, useTranslation } from '@payloadcms/ui'
+import { Button } from '@payloadcms/ui'
 
 export function ReloadBookReview() {
-  const { i18n } = useTranslation()
+  const { t } = useAdminTranslation()
   return (
     <Button type="button" buttonStyle="secondary" onClick={() => window.location.reload()}>
-      {i18n.language === 'am' ? 'የአሁኑን አስተያየት ዳግም ጫን' : 'Reload current review'}
+      {t('workspaceEditors:reloadReview')}
     </Button>
   )
 }

@@ -1,20 +1,9 @@
-import { test, expect, Page } from '@playwright/test'
+import { expect, test } from '@playwright/test'
 
-test.describe('Frontend', () => {
-  let page: Page
-
-  test.beforeAll(async ({ browser }, testInfo) => {
-    const context = await browser.newContext()
-    page = await context.newPage()
-  })
-
-  test('can go on homepage', async ({ page }) => {
-    await page.goto('http://localhost:3000')
-
-    await expect(page).toHaveTitle(/Payload Blank Template/)
-
-    const heading = page.locator('h1').first()
-
-    await expect(heading).toHaveText('Welcome to your new project.')
-  })
+test('public homepage keeps the reader navigation', async ({ page }) => {
+  await page.goto('/')
+  await expect(page).toHaveTitle(/Menfesawi/)
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('መንፈሳዊ (Menfesawi)')
+  await expect(page.getByRole('link', { name: 'Sign In', exact: true })).toBeVisible()
+  await expect(page.locator('.mf-dashboard, .mf-sidebar')).toHaveCount(0)
 })

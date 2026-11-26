@@ -1,8 +1,10 @@
 import React from 'react'
 import '../global.css'
+import { BrandLogo, brandLogoPath } from '@/components/BrandLogo'
 
 export const metadata = {
   title: 'Menfesawi - Ethiopian Orthodox Tewahedo Reader',
+  icons: { icon: brandLogoPath },
   description: 'Ethiopian Orthodox Tewahedo reading and learning platform.',
 }
 
@@ -14,7 +16,8 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
       <body className="min-h-screen bg-background font-sans text-foreground antialiased">
         <header className="border-b border-border bg-card">
           <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
-            <a href="/" className="font-heading text-lg font-semibold text-primary">
+            <a href="/" className="inline-flex items-center gap-2 font-heading text-lg font-semibold text-primary">
+              <BrandLogo size={32} decorative />
               Menfesawi
             </a>
             <nav className="flex items-center gap-4 text-sm font-medium">
