@@ -1,3 +1,4 @@
+import { bookLabel, librarySlug } from '../i18n/collectionLabels'
 import { validateBook, categoryReferences, liveOnly, guardDeletion } from '../lib/server/library/catalog'
 import type { CollectionConfig } from 'payload'
 
@@ -30,12 +31,7 @@ export const Books: CollectionConfig = {
 
         useAsTitle: 'title',
 
-        defaultColumns: [
-            'title',
-            'language',
-            '_status',
-            'updatedAt',
-        ],
+        defaultColumns: ['title', 'cover', 'authors', '_status', 'file', 'updatedAt'],
 
         listSearchableFields: ['title', 'slug'],
 
@@ -89,199 +85,212 @@ export const Books: CollectionConfig = {
 
     fields: [
         {
-            name: 'title',
-            type: 'text',
-            required: true,
-            localized: true,
-            maxLength: 250,
-
-            label: {
-                en: 'Title',
-                am: 'ርዕስ',
-            },
-        },
-
-        {
-            name: 'slug',
-            type: 'text',
-            required: true,
-            unique: true,
-            index: true,
-            maxLength: 150,
-
-            label: {
-                en: 'Slug',
-                am: 'የአገናኝ መለያ',
-            },
-
-            validate: (value: unknown) => {
-                return (
-                    (typeof value === 'string' &&
-                        /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(value)) ||
-                    'Use lowercase English letters, numbers, and single hyphens.'
-                )
-            },
-
-            admin: {
-                description: {
-                    en: 'A stable identifier shared across languages. Avoid changing it after publication.',
-                    am: 'በሁሉም ቋንቋዎች የሚጠቀሙበት ቋሚ መለያ። ከታተመ በኋላ መቀየርን ያስወግዱ።',
-                },
-            },
-        },
-
-        {
-            name: 'description',
-            type: 'textarea',
-            localized: true,
-            maxLength: 5000,
-
-            label: {
-                en: 'Description',
-                am: 'መግለጫ',
-            },
-
-            admin: {
-                description: {
-                    en: 'Describe the book and its subject without copying the full text.',
-                    am: 'ሙሉ ጽሑፉን ሳይቀዱ መጽሐፉን እና ርዕሰ ጉዳዩን ይግለጹ።',
-                },
-            },
-        },
-
-        {
-            name: 'cover',
-            type: 'upload',
-            relationTo: 'media',
-
-            label: {
-                en: 'Book cover',
-                am: 'የመጽሐፍ ሽፋን',
-            },
-
-            filterOptions: {
-                purpose: {
-                    equals: 'content',
-                },
-            },
-        },
-
-        {
-            name: 'authors',
-            type: 'array',
-
-            label: {
-                en: 'Authors',
-                am: 'ደራሲዎች',
-            },
-
+            type: 'collapsible',
+            label: bookLabel('details'),
             fields: [
                 {
-                    name: 'name',
+                    name: 'title',
                     type: 'text',
                     required: true,
-                    maxLength: 200,
+                    localized: true,
+                    admin: { description: bookLabel('titleHelp') },
+                    maxLength: 250,
 
                     label: {
-                        en: 'Author name',
-                        am: 'የደራሲ ስም',
+                        en: 'Title',
+                        am: 'ርዕስ',
+                    },
+                },
+                {
+                    name: 'slug',
+                    type: 'text',
+                    required: true,
+                    unique: true,
+                    index: true,
+                    maxLength: 150,
+
+                    label: {
+                        en: 'Slug',
+                        am: 'የአገናኝ መለያ',
+                    },
+
+                    validate: librarySlug,
+
+                    admin: {
+                        description: {
+                            en: 'A stable identifier shared across languages. Avoid changing it after publication.',
+                            am: 'በሁሉም ቋንቋዎች የሚጠቀሙበት ቋሚ መለያ። ከታተመ በኋላ መቀየርን ያስወግዱ።',
+                        },
+                    },
+                },
+                {
+                    name: 'description',
+                    type: 'textarea',
+                    localized: true,
+                    maxLength: 5000,
+
+                    label: {
+                        en: 'Description',
+                        am: 'መግለጫ',
+                    },
+
+                    admin: {
+                        description: {
+                            en: 'Describe the book and its subject without copying the full text.',
+                            am: 'ሙሉ ጽሑፉን ሳይቀዱ መጽሐፉን እና ርዕሰ ጉዳዩን ይግለጹ።',
+                        },
+                    },
+                },
+                {
+                    name: 'authors',
+                    type: 'array',
+                    admin: {
+                        description: bookLabel('authorHelp'),
+                        components: { Cell: '/components/admin/books/AuthorsCell#AuthorsCell' },
+                    },
+
+                    label: {
+                        en: 'Authors',
+                        am: 'ደራሲዎች',
+                    },
+
+                    fields: [
+                        {
+                            name: 'name',
+                            type: 'text',
+                            required: true,
+                            maxLength: 200,
+
+                            label: {
+                                en: 'Author name',
+                                am: 'የደራሲ ስም',
+                            },
+                        },
+                    ],
+                },
+                {
+                    name: 'language',
+                    type: 'select',
+                    required: true,
+                    hasMany: true,
+
+                    label: {
+                        en: 'Book languages',
+                        am: 'የመጽሐፉ ቋንቋዎች',
+                    },
+
+                    options: [
+                        {
+                            label: {
+                                en: 'Amharic',
+                                am: 'አማርኛ',
+                            },
+                            value: 'am',
+                        },
+                        {
+                            label: {
+                                en: "Ge'ez",
+                                am: 'ግዕዝ',
+                            },
+                            value: 'gez',
+                        },
+                        {
+                            label: {
+                                en: 'English',
+                                am: 'እንግሊዝኛ',
+                            },
+                            value: 'en',
+                        },
+                    ],
+
+                    admin: {
+                        description: {
+                            en: 'Languages inside the book, independent of the interface language.',
+                            am: 'ከመገናኛ ቋንቋው የተለዩ፣ በመጽሐፉ ውስጥ የሚገኙ ቋንቋዎች።',
+                        },
                     },
                 },
             ],
         },
-
         {
-            name: 'language',
-            type: 'select',
-            required: true,
-            hasMany: true,
-
-            label: {
-                en: 'Book languages',
-                am: 'የመጽሐፉ ቋንቋዎች',
-            },
-
-            options: [
+            type: 'collapsible',
+            label: bookLabel('classification'),
+            fields: [
                 {
+                    name: 'cover',
+                    type: 'upload',
+                    relationTo: 'media',
+
                     label: {
-                        en: 'Amharic',
-                        am: 'አማርኛ',
+                        en: 'Book cover',
+                        am: 'የመጽሐፍ ሽፋን',
                     },
-                    value: 'am',
+
+                    admin: { description: bookLabel('coverHelp') },
+                    filterOptions: {
+                        purpose: {
+                            equals: 'content',
+                        },
+                    },
                 },
                 {
+                    name: 'categories',
+                    type: 'relationship',
+                    relationTo: 'categories',
+                    hasMany: true,
+
                     label: {
-                        en: "Ge'ez",
-                        am: 'ግዕዝ',
+                        en: 'Categories',
+                        am: 'ምድቦች',
                     },
-                    value: 'gez',
-                },
-                {
-                    label: {
-                        en: 'English',
-                        am: 'እንግሊዝኛ',
+
+                    admin: { description: bookLabel('categoryHelp') },
+                    filterOptions: {
+                        contentTypes: {
+                            contains: 'books',
+                        },
                     },
-                    value: 'en',
                 },
             ],
-
-            admin: {
-                description: {
-                    en: 'Languages inside the book, independent of the interface language.',
-                    am: 'ከመገናኛ ቋንቋው የተለዩ፣ በመጽሐፉ ውስጥ የሚገኙ ቋንቋዎች።',
-                },
-            },
-        },
-
-        {
-            name: 'categories',
-            type: 'relationship',
-            relationTo: 'categories',
-            hasMany: true,
-
-            label: {
-                en: 'Categories',
-                am: 'ምድቦች',
-            },
-
-            filterOptions: {
-                contentTypes: {
-                    contains: 'books',
-                },
-            },
-        },
-
-        {
-            name: 'file',
-            type: 'relationship',
-            relationTo: 'files',
-            label: { en: 'Primary PDF', am: 'ዋና ፒዲኤፍ' },
-            access: { read: ({ req }) => isStaff(req.user) },
-            filterOptions: { mimeType: { equals: 'application/pdf' } },
         },
         {
-            name: 'files',
-            type: 'relationship',
-            relationTo: 'files',
-            hasMany: true,
-
-            label: {
-                en: 'Downloadable files',
-                am: 'የሚወርዱ ፋይሎች',
-            },
-
-            access: {
-                read: ({ req }) => {
-                    return isStaff(req.user as UserAuth | null)
+            type: 'collapsible',
+            label: bookLabel('distribution'),
+            fields: [
+                {
+                    name: 'file',
+                    type: 'relationship',
+                    relationTo: 'files',
+                    label: { en: 'Primary PDF', am: 'ዋና ፒዲኤፍ' },
+                    access: { read: ({ req }) => isStaff(req.user) },
+                    admin: {
+                        description: bookLabel('publishHelp'),
+                        components: { afterInput: ['/components/admin/books/BookFileTools#BookFileTools'] },
+                    },
+                    filterOptions: { mimeType: { equals: 'application/pdf' } },
                 },
-            },
+                {
+                    name: 'files',
+                    type: 'relationship',
+                    relationTo: 'files',
+                    hasMany: true,
 
-            admin: {
-                description: {
-                    en: 'Private file records for this book. Delivery must separately check login and file availability.',
-                    am: 'የዚህ መጽሐፍ የግል ፋይል መዝገቦች። መላክ ከመፈቀዱ በፊት መግባት እና የፋይሉ ተደራሽነት መረጋገጥ አለባቸው።',
+                    label: {
+                        en: 'Downloadable files',
+                        am: 'የሚወርዱ ፋይሎች',
+                    },
+
+                    access: {
+                        read: ({ req }) => {
+                            return isStaff(req.user as UserAuth | null)
+                        },
+                    },
+
+                    admin: {
+                        description: bookLabel('legacyHelp'),
+                    },
                 },
-            },
+            ],
         },
     ],
 

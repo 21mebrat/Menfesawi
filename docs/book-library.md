@@ -78,3 +78,12 @@ db.files.countDocuments({ ingestionStatus: { $exists: false } })
 Stop rollout if duplicates, malformed relationships, or incompatible indexes exist. Inventory the affected records privately, agree on ownership, moderation and retention with an administrator, rehearse the approved repair on a copy, then verify and build the indexes before enabling writes. No automatic record deletion or reconciliation is included. Run the preflight **before** starting a configuration that builds indexes automatically.
 
 Existing category applicability, book languages, author rows and the legacy `books.files` list are preserved. Neither schema contains an order field. Review pre-versioned categories and explicitly publish the intended public hierarchy. A legacy book with exactly one PDF can use it as primary once its readiness is established. Publishing writes the canonical `file` reference. Books with multiple legacy files require an editor to select the primary. Legacy Files without verified ingestion state require re-ingestion or an approved, evidence-based backfill of the stored message and file metadata. Retain original records and audit their references before changing them.
+
+## Manual live verification
+
+Use an approved test book, a PDF you have permission to distribute, and a linked test account.
+
+1. As active staff, upload the test PDF in **Files**. Open its record, verify the upload is ready, confirm distribution permission and enable availability.
+2. In **Books**, select it as the primary PDF and publish the test book. Note its current confirmed Telegram send count.
+3. Sign in on the website with the linked account and request this book. Redeem the short-lived handoff in the bot's private chat.
+4. Verify the bot sends the requested PDF without requiring storage-group membership. Confirm one new sent delivery for this book and an increase of one in its successful delivery count.

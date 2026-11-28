@@ -337,7 +337,7 @@ test('Payload account language switch updates server and client text and persist
   await openDashboard(page, fixtures.editor)
   await page.locator('.app-header__account').click()
   await page.locator('#language-select').click()
-  await page.getByRole('option', { name: /አማርኛ/ }).click()
+  await page.getByRole('listbox').getByRole('option', { name: /አማርኛ/ }).click()
   await expect(page.locator('html')).toHaveAttribute('lang', 'am')
   await expect(page.locator('.mf-account small')).toHaveText('የሥራ ቦታ')
   await page.getByRole('link', { name: 'Menfesawi', exact: true }).click()
@@ -382,7 +382,7 @@ test('Payload account language switch updates server and client text and persist
   // Navigate directly so we also exercise a fresh server-rendered account page.
   await page.goto(base + '/account')
   await page.locator('#language-select').click()
-  await page.getByRole('option', { name: 'English', exact: true }).click()
+  await page.getByRole('listbox').getByRole('option', { name: 'English', exact: true }).click()
   await expect(page.locator('.mf-account small')).toHaveText('Workspace')
   await page.reload()
   await expect(page.getByRole('button', { name: 'Search your workspace' })).toBeVisible()
@@ -675,7 +675,16 @@ test('collection directories share the Users format and preserve native collecti
     if (slug === 'files') await expect(list.getByLabel('Book PDF (up to 4 MB)')).toBeVisible()
   }
   const row = list.locator('tr[data-id="' + fixtures.book + '"]')
-  await expect(row).toBeVisible()
+  await expect(row.locator('.cell-authors')).toHaveText('First Author, Second Author')
+  await expect(row.locator('.cell-file')).toContainText('workspace-fixture.pdf')
+  await expect(row.locator('.cell-cover')).toBeVisible()
+  const categoryFilter = new URLSearchParams({
+    locale: 'en',
+    'where[or][0][and][0][categories][equals]': fixtures.category,
+  })
+  await page.goto(base + '/collections/books?' + categoryFilter)
+  await expect(list.locator('tbody tr[data-id]')).toHaveCount(1)
+  await expect(row.locator('.cell-title')).toContainText('Workspace test book')
   await list.getByLabel('Sort records').selectOption('createdAt')
   await expect(page).toHaveURL((url) => url.searchParams.get('sort') === 'createdAt')
   await list.getByLabel('Status', { exact: true }).selectOption('published')
@@ -802,4 +811,108 @@ test('media bulk upload uses the same compact dialog', async ({ page }) => {
   await expectDialogToFitHorizontally(panel)
   await dialog.getByRole('button', { name: 'Close', exact: true }).click()
   await expect(dialog).toHaveCount(0)
+})
+
+test('Books editor offers filtered activity to admins and translated PDF guidance to editors', async ({
+  page,
+}) => {
+  await openDashboard(page, fixtures.admin)
+  await page.goto(base + '/collections/books/' + fixtures.book + '?locale=en')
+  await expect(page.getByText('Book details', { exact: true })).toBeVisible()
+  await expect(page.getByText('Cover and categories', { exact: true })).toBeVisible()
+  await expect(
+    page.getByRole('status').filter({ hasText: 'PDF ready · Enable availability' }),
+  ).toBeVisible()
+  await page.getByRole('link', { name: 'Pending written reviews' }).click()
+  await expect(page).toHaveURL(
+    (url) =>
+      url.pathname.endsWith('/collections/book-ratings') &&
+      url.searchParams.get('where[or][0][and][0][book][equals]') === fixtures.book &&
+      url.searchParams.get('where[or][0][and][1][reviewStatus][equals]') === 'pending',
+  )
+  await expect(page.locator('tr[data-id="' + fixtures.review + '"]')).toBeVisible()
+  await page.goto(base + '/collections/books/' + fixtures.book)
+  await page.getByRole('link', { name: 'Confirmed Telegram sends' }).click()
+  await expect(page).toHaveURL(
+    (url) =>
+      url.pathname.endsWith('/collections/book-deliveries') &&
+      url.searchParams.get('where[or][0][and][1][state][equals]') === 'sent',
+  )
+
+  await openDashboard(page, fixtures.editor)
+  await page.goto(base + '/collections/books/' + fixtures.book + '?locale=en')
+  await expect(
+    page.getByRole('link', { name: 'Upload or manage PDFs (opens in a new tab)' }),
+  ).toBeVisible()
+  await expect(page.getByRole('navigation', { name: 'Book activity' })).toHaveCount(0)
+  await page.getByRole('combobox', { name: 'Interface language' }).selectOption('am')
+  await expect(page.getByText('ፒዲኤፍ እና ርክክብ', { exact: true })).toBeVisible()
+  await expect(page.locator('#field-title')).toHaveValue('Workspace test book')
+  await page.setViewportSize({ width: 375, height: 740 })
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+})
+
+test('Files upload announces pending, rejected and uncertain outcomes without automatic retries', async ({
+  page,
+}) => {
+  await openDashboard(page, fixtures.editor)
+  await page.goto(base + '/collections/files')
+  const upload = page.locator('form.book-upload')
+  const input = upload.locator('input[type=file]')
+  const send = upload.getByRole('button', { name: 'Upload to Telegram' })
+  // All POSTs are intercepted. Nothing is uploaded to storage.
+  let count = 0
+  let release!: () => void
+  const gate = new Promise<void>((resolve) => {
+    release = resolve
+  })
+  await page.route('**/api/library/upload', async (route) => {
+    count++
+    if (count === 1) {
+      await gate
+      await route.fulfill({ json: { id: '0123456789abcdef01234567' } })
+    } else if (count === 4) {
+      await route.fulfill({ status: 409, json: {} })
+    } else {
+      await route.fulfill({
+        status: 502,
+        json: { outcome: count === 2 ? 'rejected' : 'uncertain' },
+      })
+    }
+  })
+  const choose = () =>
+    input.setInputFiles({
+      name: 'fixture.pdf',
+      mimeType: 'application/pdf',
+      buffer: Buffer.from('%PDF-1.4\n%%EOF'),
+    })
+  await choose()
+  await send.click()
+  await expect(upload.getByRole('status')).toHaveText('Uploading PDF to private storage…')
+  await expect(send).toBeDisabled()
+  await upload.evaluate((el) => (el as HTMLFormElement).requestSubmit())
+  release()
+  await expect(upload.getByRole('link', { name: 'Open file record' })).toHaveAttribute(
+    'href',
+    /\/files\/0123456789abcdef01234567$/,
+  )
+  await expect(upload.getByRole('status')).toContainText('PDF ready')
+  expect(count).toBe(1)
+  await choose()
+  for (const [index, text] of [
+    'The upload was rejected',
+    'Delivery to storage could not be confirmed',
+    'Check the existing upload record',
+  ].entries()) {
+    await send.click()
+    await expect(upload.getByRole('alert')).toContainText(text)
+    expect(count).toBe(index + 2)
+  }
+  // Chromium reports the deliberately mocked HTTP errors as resource console messages.
+  browserErrors = browserErrors.filter(
+    (message) =>
+      !/^Failed to load resource: the server responded with a status of (502|409) .*\(\/api\/library\/upload\)$/.test(
+        message,
+      ),
+  )
 })

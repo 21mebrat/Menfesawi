@@ -1,4 +1,7 @@
+import { getTranslation, t } from '@payloadcms/translations'
+import { bookLabel } from '@/i18n/collectionLabels'
 import {
+  ValidationError,
   type Access,
   type CollectionSlug,
   type PayloadRequest,
@@ -10,6 +13,20 @@ import type { Book, Category, File as LibraryFile } from '@/payload-types'
 import { isStaff } from '@/access'
 import { getMongoSession } from '../reading/coordination'
 import { fail, lock, ref, session } from './coordination'
+
+function invalidField(
+  req: PayloadRequest,
+  path: string,
+  key: Parameters<typeof bookLabel>[0],
+): never {
+  throw new ValidationError(
+    {
+      req,
+      errors: [{ path, message: getTranslation(bookLabel(key), req.i18n) }],
+    },
+    req.t,
+  )
+}
 
 export const liveOnly: CollectionBeforeOperationHook = ({ operation, req, args }) => {
   if (operation === 'read' && !isStaff(req.user)) args.draft = false
@@ -84,7 +101,13 @@ export const validateCategory: CollectionBeforeValidateHook<Category> = async ({
         (await hasCurrentReference(req, type, 'categories', originalDoc.id))
       ) {
         fail(
-          `Cannot remove ${type} applicability while a live record or latest saved draft references this category.`,
+          t({
+            key: 'bookEditor:applicability',
+            translations: req.i18n.translations,
+            vars: {
+              type: getTranslation(req.payload.collections[type].config.labels.plural, req.i18n),
+            },
+          }),
           409,
         )
       }
@@ -92,7 +115,7 @@ export const validateCategory: CollectionBeforeValidateHook<Category> = async ({
   }
   let parent = ref(effective.parent)
   while (parent) {
-    if (seen.has(parent)) fail('Category hierarchy contains a cycle.')
+    if (seen.has(parent)) invalidField(req, 'parent', 'cycle')
     seen.add(parent)
     await lock(req, 'categories', parent)
     const doc = await req.payload.findByID({
@@ -113,12 +136,12 @@ export const categoryReferences: CollectionBeforeValidateHook = async ({
   collection,
 }) => {
   const ids = (data?.categories === undefined ? originalDoc?.categories : data.categories) ?? []
-  if (!Array.isArray(ids)) return fail('Select a list of categories.')
+  if (!Array.isArray(ids)) return invalidField(req, 'categories', 'listCategories')
   for (const id of [...new Set(ids.map(ref))].sort()) {
     await lock(req, 'categories', id)
     const category = await req.payload.findByID({ collection: 'categories', id, req, depth: 0 })
     if (!category.contentTypes.some((type) => type === collection.slug))
-      fail('Category does not apply to this content.')
+      invalidField(req, 'categories', 'categoryError')
   }
 }
 export function primaryFile(book: Pick<Book, 'file' | 'files'>) {
@@ -153,12 +176,12 @@ export const validateBook: CollectionBeforeValidateHook<Book> = async ({
       image.purpose !== 'content' ||
       !['image/jpeg', 'image/png', 'image/webp'].includes(image.mimeType ?? '')
     )
-      fail('Select a content image.')
+      invalidField(req, 'cover', 'coverError')
   }
   const primary = primaryFile(doc)
-  if (doc._status === 'published' && !primary) fail('Choose a primary PDF before publishing.')
+  if (doc._status === 'published' && !primary) invalidField(req, 'file', 'missingPDF')
   if (doc._status === 'published' && !doc.file && primary) data.file = primary
-  if (doc.files != null && !Array.isArray(doc.files)) return fail('Select a list of files.')
+  if (doc.files != null && !Array.isArray(doc.files)) return invalidField(req, 'files', 'listFiles')
   const ids = (doc.files ?? []).map(ref)
   if (primary) ids.push(primary)
   for (const id of [...new Set(ids)].sort()) {
@@ -168,7 +191,7 @@ export const validateBook: CollectionBeforeValidateHook<Book> = async ({
       file.mimeType !== 'application/pdf' ||
       (doc._status === 'published' && id === primary && !ready(file))
     )
-      fail('The primary file must be a ready, available PDF to publish.')
+      invalidField(req, 'file', 'invalidPDF')
   }
 }
 export const guardDeletion: CollectionBeforeDeleteHook = async ({ req, id, collection }) => {

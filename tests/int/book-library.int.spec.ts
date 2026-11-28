@@ -216,7 +216,9 @@ describe('Protected book library', () => {
         user: editor,
         data: { _status: 'published' },
       }),
-    ).rejects.toThrow(/cycle/)
+    ).rejects.toMatchObject({
+      data: { errors: [{ path: 'parent', message: expect.stringMatching(/cycle/) }] },
+    })
     expect(
       (await p.findByID({ collection: 'categories', id: staged, depth: 0 })).parent ?? null,
     ).toBeNull()
@@ -228,10 +230,14 @@ describe('Protected book library', () => {
     })
     await expect(
       p.update({ collection: 'categories', id: root, data: { parent: root } }),
-    ).rejects.toThrow(/cycle/)
+    ).rejects.toMatchObject({
+      data: { errors: [{ path: 'parent', message: expect.stringMatching(/cycle/) }] },
+    })
     await expect(
       p.update({ collection: 'categories', id: root, data: { parent: child } }),
-    ).rejects.toThrow(/cycle/)
+    ).rejects.toMatchObject({
+      data: { errors: [{ path: 'parent', message: expect.stringMatching(/cycle/) }] },
+    })
     await expect(
       p.update({
         collection: 'categories',
@@ -333,13 +339,13 @@ describe('Protected book library', () => {
         await update([id])
         await update([], true)
         await expect(removeType()).rejects.toThrow(
-          new RegExp(`Cannot remove ${collection} applicability`),
+          new RegExp(`Cannot remove ${collection} applicability`, 'i'),
         )
         expect((await p.findByID({ collection, id: contentID, depth: 0 })).categories).toEqual([id])
         await update([])
         await update([id], true)
         await expect(removeType()).rejects.toThrow(
-          new RegExp(`Cannot remove ${collection} applicability`),
+          new RegExp(`Cannot remove ${collection} applicability`, 'i'),
         )
         expect(
           (await p.findByID({ ...options, collection, id: contentID, user: editor, draft: true }))
@@ -375,11 +381,97 @@ describe('Protected book library', () => {
       await p.db.rollbackTransaction(transactionID)
       throw error
     }
-    await expect(publish()).rejects.toThrow(/books/)
+    await expect(publish()).rejects.toThrow(/books/i)
     expect((await p.findByID({ collection: 'categories', id })).contentTypes).toContain('books')
     expect((await p.findByID({ collection: 'books', id: b, depth: 0 })).categories).toEqual([id])
   })
 
+  it('edits book locales independently and enforces editor, member and category permissions', async () => {
+    const cat = await category()
+    const draft = await p.create({
+      ...options,
+      collection: 'books',
+      user: editor,
+      locale: 'en',
+      draft: true,
+      data: {
+        title: 'English edition',
+        slug: randomUUID(),
+        categories: [cat],
+        language: ['gez'],
+        authors: [{ name: 'Example Author' }],
+      },
+    })
+    owned.books.push(draft.id)
+    await p.update({
+      ...options,
+      collection: 'books',
+      id: draft.id,
+      user: editor,
+      draft: true,
+      locale: 'am',
+      data: { title: 'የሙከራ መጽሐፍ' },
+    })
+    for (const [locale, title] of [
+      ['en', 'English edition'],
+      ['am', 'የሙከራ መጽሐፍ'],
+    ] as const) {
+      const doc = await p.findByID({
+        ...options,
+        collection: 'books',
+        id: draft.id,
+        user: editor,
+        draft: true,
+        locale,
+        fallbackLocale: false,
+      })
+      expect(doc).toMatchObject({
+        title,
+        slug: draft.slug,
+        authors: [{ name: 'Example Author' }],
+        language: ['gez'],
+        categories: [cat],
+      })
+    }
+    await expect(
+      p.update({
+        ...options,
+        collection: 'books',
+        id: draft.id,
+        user: member,
+        data: { title: 'Changed' },
+      }),
+    ).rejects.toMatchObject({ status: 403 })
+    await expect(
+      p.update({
+        ...options,
+        collection: 'books',
+        id: draft.id,
+        user: editor,
+        data: { _status: 'published' },
+      }),
+    ).rejects.toMatchObject({
+      data: { errors: [{ path: 'file', message: expect.stringContaining('primary PDF') }] },
+    })
+    const otherCategory = await category()
+    await p.update({
+      ...options,
+      collection: 'categories',
+      user: editor,
+      id: otherCategory,
+      data: { contentTypes: ['hymns'] },
+    })
+    await expect(
+      p.update({
+        ...options,
+        collection: 'books',
+        id: draft.id,
+        user: editor,
+        draft: true,
+        data: { categories: [otherCategory] },
+      }),
+    ).rejects.toMatchObject({ data: { errors: [{ path: 'categories' }] } })
+  })
   it('validates the effective file at status-only publication and keeps storage fields private', async () => {
     const replacement = await ingest('pending-approval.pdf', pdf(run + 'second'))
     const b = await createBook('Original title')
@@ -392,7 +484,9 @@ describe('Protected book library', () => {
     })
     await expect(
       p.update({ collection: 'books', id: b, user: editor, data: { _status: 'published' } }),
-    ).rejects.toThrow(/ready/)
+    ).rejects.toMatchObject({
+      data: { errors: [{ path: 'file', message: expect.stringMatching(/ready/) }] },
+    })
     const publicBook = await p.findByID({
       collection: 'books',
       id: b,
@@ -445,7 +539,9 @@ describe('Protected book library', () => {
     try {
       await expect(
         p.update({ collection: 'books', id: book, user: admin, data: { cover: avatar.id } }),
-      ).rejects.toThrow(/content image/)
+      ).rejects.toMatchObject({
+        data: { errors: [{ path: 'cover', message: expect.stringMatching(/content image/) }] },
+      })
     } finally {
       await p.db.deleteOne({ collection: 'media', where: { id: { equals: avatar.id } } })
     }
@@ -527,7 +623,10 @@ describe('Protected book library', () => {
     const bytes = pdf(run + 'ambiguous')
     mode = 'timeout'
     try {
-      await expect(ingest('unknown.pdf', bytes)).rejects.toMatchObject({ status: 502 })
+      await expect(ingest('unknown.pdf', bytes)).rejects.toMatchObject({
+        status: 502,
+        outcome: 'uncertain',
+      })
     } finally {
       mode = 'ok'
     }

@@ -3,7 +3,7 @@ import config from '@/payload.config'
 import { isStaff } from '@/access'
 import { readLimitedBody } from '@/lib/server/library/uploadRequest'
 import { beginLink, confirmLink, issueTicket } from '@/lib/server/library/handoff'
-import { ingestBookPDF, WEB_PDF_LIMIT } from '@/lib/server/library/ingest'
+import { ingestBookPDF, UploadStorageError, WEB_PDF_LIMIT } from '@/lib/server/library/ingest'
 import { publicBookReviews, publicBookStatistics } from '@/lib/server/library/statistics'
 import { fail } from '@/lib/server/library/coordination'
 
@@ -11,6 +11,8 @@ type Context = { params: Promise<{ action: string }> }
 const json = (result: unknown, status = 200) =>
   Response.json(result, { status, headers: { 'cache-control': 'no-store' } })
 function errorResponse(err: unknown) {
+  if (err instanceof UploadStorageError)
+    return json({ error: err.message, outcome: err.outcome }, err.status)
   if (err instanceof APIError) return json({ error: err.message }, err.status)
   throw err
 }

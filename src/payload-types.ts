@@ -265,6 +265,9 @@ export interface AuthAccount {
  */
 export interface Category {
   id: string;
+  /**
+   * Leave empty for a top-level category. Public navigation requires every parent to be published.
+   */
   parent?: (string | null) | Category;
   /**
    * The category name displayed in the selected content language.
@@ -279,7 +282,7 @@ export interface Category {
    */
   description?: string | null;
   /**
-   * Select where this category should be available.
+   * Select Books to offer this category in the book editor. Remove its assignments from live books and saved drafts before clearing Books.
    */
   contentTypes: ('books' | 'teachings' | 'hymns' | 'articles')[];
   updatedAt: string;
@@ -342,6 +345,9 @@ export interface File {
  */
 export interface Book {
   id: string;
+  /**
+   * Enter the title in the selected content language.
+   */
   title: string;
   /**
    * A stable identifier shared across languages. Avoid changing it after publication.
@@ -351,7 +357,9 @@ export interface Book {
    * Describe the book and its subject without copying the full text.
    */
   description?: string | null;
-  cover?: (string | null) | Media;
+  /**
+   * Add one author name per row, in display order.
+   */
   authors?:
     | {
         name: string;
@@ -362,10 +370,20 @@ export interface Book {
    * Languages inside the book, independent of the interface language.
    */
   language: ('am' | 'gez' | 'en')[];
+  /**
+   * Optional. Choose a content image in JPEG, PNG or WebP format.
+   */
+  cover?: (string | null) | Media;
+  /**
+   * Optional. Only categories marked for Books are available here.
+   */
   categories?: (string | Category)[] | null;
+  /**
+   * Save a draft while preparing the PDF. To publish, enter a title, slug and book language, then choose a ready PDF enabled for delivery.
+   */
   file?: (string | null) | File;
   /**
-   * Private file records for this book. Delivery must separately check login and file availability.
+   * A single downloadable file can serve as the primary PDF. If several are attached, select the primary PDF above.
    */
   files?: (string | File)[] | null;
   updatedAt: string;
@@ -1174,7 +1192,6 @@ export interface BooksSelect<T extends boolean = true> {
   title?: T;
   slug?: T;
   description?: T;
-  cover?: T;
   authors?:
     | T
     | {
@@ -1182,6 +1199,7 @@ export interface BooksSelect<T extends boolean = true> {
         id?: T;
       };
   language?: T;
+  cover?: T;
   categories?: T;
   file?: T;
   files?: T;

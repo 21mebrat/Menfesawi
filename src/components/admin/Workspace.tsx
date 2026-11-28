@@ -7,6 +7,7 @@ import { workspaceData } from './workspace-data'
 import { navigation } from './navigation'
 import './workspace.css'
 import './directories.css'
+import './books/books.css'
 
 type TemplateProps = ServerProps & { req?: PayloadRequest }
 

@@ -1,4 +1,4 @@
-import type { Payload } from 'payload'
+import { APIError, type Payload } from 'payload'
 import { isStaff } from '@/access'
 import { isJsonObject } from '../social/telegram'
 import { duplicate, fail } from './coordination'
@@ -12,8 +12,17 @@ import {
   TelegramFailure,
 } from './telegram'
 
-export const WEB_PDF_LIMIT = 4_000_000
-export const STAFF_PDF_LIMIT = 50_000_000
+import { STAFF_PDF_LIMIT } from '@/lib/library/pdfLimits'
+export { STAFF_PDF_LIMIT, WEB_PDF_LIMIT } from '@/lib/library/pdfLimits'
+
+export class UploadStorageError extends APIError {
+  constructor(
+    message: string,
+    readonly outcome: 'rejected' | 'uncertain',
+  ) {
+    super(message, 502)
+  }
+}
 export async function ingestBookPDF(
   payload: Payload,
   userId: string,
@@ -80,7 +89,7 @@ export async function ingestBookPDF(
       { $set: { ingestionStatus: 'failed', ingestionFailure: 'rejected' } },
     )
     if (error instanceof TelegramFailure)
-      return fail('Could not verify private Telegram storage.', 502)
+      throw new UploadStorageError('Could not verify private Telegram storage.', 'rejected')
     throw error
   }
   const form = new FormData()
@@ -123,6 +132,6 @@ export async function ingestBookPDF(
         },
       },
     )
-    return fail(error.message, 502)
+    throw new UploadStorageError(error.message, error.uncertain ? 'uncertain' : 'rejected')
   }
 }

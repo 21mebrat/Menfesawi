@@ -1,3 +1,4 @@
+import { bookLabel, librarySlug } from '../i18n/collectionLabels'
 import { validateCategory, readCategories, liveOnly, guardDeletion } from '../lib/server/library/catalog'
 import type { CollectionConfig } from 'payload'
 
@@ -28,7 +29,7 @@ export const Categories: CollectionConfig = {
             am: 'ይዘት',
         },
         useAsTitle: 'name',
-        defaultColumns: ['name', 'slug', 'updatedAt'],
+        defaultColumns: ['name', 'parent', 'contentTypes', '_status', 'updatedAt'],
         listSearchableFields: ['name', 'slug'],
 
         description: {
@@ -65,6 +66,7 @@ export const Categories: CollectionConfig = {
     fields: [
         {
             name: 'parent',
+            admin: { description: bookLabel('parentHelp') },
             type: 'relationship',
             relationTo: 'categories',
             index: true,
@@ -104,19 +106,7 @@ export const Categories: CollectionConfig = {
                 am: 'የአገናኝ መለያ',
             },
 
-            validate: (value: unknown) => {
-                if (
-                    typeof value !== 'string' ||
-                    !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(value)
-                ) {
-                    return (
-                        'Use lowercase English letters, numbers, and single hyphens. ' +
-                        'Example: church-history'
-                    )
-                }
-
-                return true
-            },
+            validate: librarySlug,
 
             admin: {
                 placeholder: 'church-history',
@@ -190,10 +180,7 @@ export const Categories: CollectionConfig = {
             ],
 
             admin: {
-                description: {
-                    en: 'Select where this category should be available.',
-                    am: 'ይህ ምድብ የሚጠቀምባቸውን የይዘት ዓይነቶች ይምረጡ።',
-                },
+                description: bookLabel('appliesHelp'),
             },
         },
     ],
